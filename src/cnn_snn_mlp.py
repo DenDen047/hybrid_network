@@ -12,6 +12,7 @@ import pandas as pd
 import os
 import time
 import sys
+import logging
 
 import torch
 import numpy as np
@@ -45,17 +46,29 @@ parser.add_argument('--config_file', type=str, default='snn_mlp_1.yaml',
                     help='path to configuration file')
 parser.add_argument('--train', action='store_true',
                     help='train model')
-
 parser.add_argument('--test', action='store_true',
                     help='test model')
+parser.add_argument('--logging', action='store_true', default=True, help='if true, output the all image/pdf files during the process')
 
 args = parser.parse_args()
 
+# setting of logging
+if args.logging:
+    log_fpath = '/logs/{}.log'.format(time.strftime("%Y%m%d-%H%M%S"))
+    logging.basicConfig(
+        filename=log_fpath,
+        level=logging.DEBUG
+    )
+logger = logging.getLogger(__name__)
+_console_handler = logging.StreamHandler(sys.stdout)
+_console_handler.setLevel(logging.DEBUG)
+logger.addHandler(_console_handler)
+
 # %% config file
 if args.config_file is None:
-    print('No config file provided, use default config file')
+    logger.info('No config file provided, use default config file')
 else:
-    print('Config file provided:', args.config_file)
+    logger.info(f'Config file provided: {args.config_file}')
 
 conf = OmegaConf.load(args.config_file)
 
@@ -106,19 +119,10 @@ mnist_testset = datasets.MNIST(root='/dataset', train=False, download=True, tran
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
-class Linear_t(torch.nn.Module):
-    def __init__(self, *args, **kwargs):
-        '''
-        :param input_size:
-        :param neuron_number:
-        :param step_num:
-        :param batch_size:
-        :param tau_m:
-        :param train_bias:
-        :param membrane_filter:
-        '''
+class ANN_Module(torch.nn.Module):
+    def __init__(self, func, *args, **kwargs):
         super().__init__()
-        self.linear = nn.Linear(*args, **kwargs)
+        self.ann_layer = func(*args, **kwargs)
 
     def forward(self, input_vectors):
         """
@@ -131,7 +135,7 @@ class Linear_t(torch.nn.Module):
         inputs = input_vectors.unbind(dim=-1)
         outputs = []
         for i in range(len(inputs)):
-            output = self.linear(inputs[i])
+            output = self.ann_layer(inputs[i])
             outputs += [output]
         return torch.stack(outputs,dim=-1)
 
@@ -144,7 +148,9 @@ class mysnn(torch.nn.Module):
         self.length = length
         self.batch_size = batch_size
 
-        self.mlp = Linear_t(in_features=784, out_features=784)
+        self.mlp = ANN_Module(nn.Linear, in_features=784, out_features=784)
+        self.bn1 = nn.BatchNorm1d(num_features=784)
+        self.sigm = nn.Sigmoid()
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -177,7 +183,7 @@ class mysnn(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        ann_out = self.mlp(inputs)
+        ann_out = self.sigm(self.bn1(self.mlp(inputs)))
 
         axon1_out, axon1_states = self.axon1(ann_out, axon1_states)
         spike_l1, snn1_states = self.snn1(axon1_out, snn1_states)
@@ -311,7 +317,7 @@ if __name__ == "__main__":
             train_acc, train_loss = train(snn, optimizer, scheduler, train_dataloader, writer=None)
             train_acc_list.append(train_acc)
 
-            print('Train epoch: {}, acc: {}'.format(j, train_acc))
+            logger.info('Train epoch: {}, acc: {}'.format(j, train_acc))
 
             # save every checkpoint
             if save_checkpoint == True:
@@ -330,7 +336,7 @@ if __name__ == "__main__":
             snn.eval()
             test_acc, test_loss = test(snn, test_dataloader, writer=None)
 
-            print('Test epoch: {}, acc: {}'.format(j, test_acc))
+            logger.info('Test epoch: {}, acc: {}'.format(j, test_acc))
             test_acc_list.append(test_acc)
 
         # save result and get best epoch
@@ -349,10 +355,10 @@ if __name__ == "__main__":
 
         best_checkpoint = checkpoint_list[best_test_epoch]
 
-        print('Summary:')
-        print('Best train acc: {}, epoch: {}'.format(best_train_acc, best_train_epoch))
-        print('Best test acc: {}, epoch: {}'.format(best_test_acc, best_test_epoch))
-        print('best checkpoint:', best_checkpoint)
+        logger.info('Summary:')
+        logger.info('Best train acc: {}, epoch: {}'.format(best_train_acc, best_train_epoch))
+        logger.info('Best test acc: {}, epoch: {}'.format(best_test_acc, best_test_epoch))
+        logger.info(f'best checkpoint: {best_checkpoint}')
 
     elif args.test == True:
 
@@ -361,5 +367,5 @@ if __name__ == "__main__":
 
         test_acc, test_loss = test(snn, test_dataloader)
 
-        print('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
+        logger.info('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
 

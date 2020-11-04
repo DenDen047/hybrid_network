@@ -9,6 +9,7 @@ docker run -it --rm \
     -v "$CURRENT_PATH"/src:/workdir \
     -v "$CURRENT_PATH"/dataset:/dataset \
     -v "$CURRENT_PATH"/checkpoint:/checkpoint \
+    -v "$CURRENT_PATH"/logs:/logs \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash
