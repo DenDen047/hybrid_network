@@ -14,5 +14,8 @@ WORKDIR /tmp
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
+# torch
+RUN pip install torchsummary
+
 # clearn
 RUN rm -rf /var/lib/apt/lists/*
