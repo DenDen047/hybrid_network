@@ -150,7 +150,7 @@ class ann2_snn1(torch.nn.Module):
         self.bn1 = nn.BatchNorm1d(num_features=500)
         self.relu1 = nn.ReLU()
 
-        self.mlp2 = ANN_Module(nn.Linear, in_features=784, out_features=500)
+        self.mlp2 = ANN_Module(nn.Linear, in_features=500, out_features=500)
         self.bn2 = nn.BatchNorm1d(num_features=500)
         self.sigm = nn.Sigmoid()
 
@@ -204,12 +204,12 @@ class baseline_ann(torch.nn.Module):
         self.bn1 = nn.BatchNorm1d(num_features=500)
         self.relu1 = nn.ReLU()
 
-        self.mlp2 = ANN_Module(nn.Linear, in_features=784, out_features=500)
+        self.mlp2 = ANN_Module(nn.Linear, in_features=500, out_features=500)
         self.bn2 = nn.BatchNorm1d(num_features=500)
         self.relu2 = nn.ReLU()
 
-        self.mlp3 = ANN_Module(nn.Linear, in_features=784, out_features=500)
-        self.bn3 = nn.BatchNorm1d(num_features=500)
+        self.mlp3 = ANN_Module(nn.Linear, in_features=500, out_features=10)
+        self.bn3 = nn.BatchNorm1d(num_features=10)
         self.sigm = nn.Sigmoid()
 
         self.dropout1 = nn.Dropout(p=0.3, inplace=False)

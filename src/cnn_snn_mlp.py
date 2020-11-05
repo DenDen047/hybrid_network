@@ -208,7 +208,7 @@ def test(model, test_data_loader, writer=None):
 
 if __name__ == "__main__":
 
-    model = mlp_networks.ann1_snn2(
+    model = mlp_networks.ann2_snn1(
         batch_size,
         length,
         train_coefficients,
