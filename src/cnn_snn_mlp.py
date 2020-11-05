@@ -34,6 +34,8 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
+import mlp_networks
+
 
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
@@ -119,87 +121,6 @@ mnist_testset = datasets.MNIST(root='/dataset', train=False, download=True, tran
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
-class ANN_Module(torch.nn.Module):
-    def __init__(self, func, *args, **kwargs):
-        super().__init__()
-        self.ann_layer = func(*args, **kwargs)
-
-    def forward(self, input_vectors):
-        """
-        :param input_vectors: [batch, dim0 ,dim1..]
-        :param  prev_states: tuple (prev_v, prev_reset)
-        :return:
-        """
-
-        # unbind along last dimension
-        inputs = input_vectors.unbind(dim=-1)
-        outputs = []
-        for i in range(len(inputs)):
-            output = self.ann_layer(inputs[i])
-            outputs += [output]
-        return torch.stack(outputs,dim=-1)
-
-
-# %% define model
-class mysnn(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-
-        self.length = length
-        self.batch_size = batch_size
-
-        self.mlp = ANN_Module(nn.Linear, in_features=784, out_features=784)
-        self.bn1 = nn.BatchNorm1d(num_features=784)
-        self.sigm = nn.Sigmoid()
-
-        self.train_coefficients = train_coefficients
-        self.train_bias = train_bias
-        self.membrane_filter = membrane_filter
-
-        self.axon1 = dual_exp_iir_layer((784,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
-        self.snn1 = neuron_layer(784, 500, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        self.axon2 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
-        self.snn2 = neuron_layer(500, 500, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
-        self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        self.dropout1 = torch.nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = torch.nn.Dropout(p=0.3, inplace=False)
-
-    def forward(self, inputs):
-        """
-        :param inputs: [batch, input_size, t]
-        :return:
-        """
-
-        axon1_states = self.axon1.create_init_states()
-        snn1_states = self.snn1.create_init_states()
-
-        axon2_states = self.axon2.create_init_states()
-        snn2_states = self.snn2.create_init_states()
-
-        axon3_states = self.axon3.create_init_states()
-        snn3_states = self.snn3.create_init_states()
-
-        ann_out = self.sigm(self.bn1(self.mlp(inputs)))
-
-        axon1_out, axon1_states = self.axon1(ann_out, axon1_states)
-        spike_l1, snn1_states = self.snn1(axon1_out, snn1_states)
-
-        drop_1 = self.dropout1(spike_l1)
-
-        axon2_out, axon2_states = self.axon2(drop_1, axon2_states)
-        spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
-
-        drop_2 = self.dropout2(spike_l2)
-
-        axon3_out, axon3_states = self.axon3(drop_2, axon3_states)
-        spike_l3, snn3_states = self.snn3(axon3_out, snn3_states)
-
-        return spike_l3
-
 
 ########################### train function ###################################
 def train(model, optimizer, scheduler, train_data_loader, writer=None):
@@ -284,13 +205,22 @@ def test(model, test_data_loader, writer=None):
 
     return acc, loss
 
+
 if __name__ == "__main__":
 
-    snn = mysnn().to(device)
+    model = mlp_networks.baseline_snn(
+        batch_size,
+        length,
+        train_coefficients,
+        train_bias,
+        membrane_filter,
+        tau_m,
+        tau_s
+    ).to(device)
 
     writer = SummaryWriter()
 
-    params = list(snn.parameters())
+    params = list(model.parameters())
 
     optimizer = get_optimizer(params, conf)
 
@@ -313,8 +243,8 @@ if __name__ == "__main__":
 
             epoch_time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
-            snn.train()
-            train_acc, train_loss = train(snn, optimizer, scheduler, train_dataloader, writer=None)
+            model.train()
+            train_acc, train_loss = train(model, optimizer, scheduler, train_dataloader, writer=None)
             train_acc_list.append(train_acc)
 
             logger.info('Train epoch: {}, acc: {}'.format(j, train_acc))
@@ -327,17 +257,23 @@ if __name__ == "__main__":
 
                 torch.save({
                     'epoch': j,
-                    'snn_state_dict': snn.state_dict(),
+                    'snn_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': train_loss,
                 }, checkpoint_path)
 
             # test model
-            snn.eval()
-            test_acc, test_loss = test(snn, test_dataloader, writer=None)
+            model.eval()
+            test_acc, test_loss = test(model, test_dataloader, writer=None)
 
             logger.info('Test epoch: {}, acc: {}'.format(j, test_acc))
             test_acc_list.append(test_acc)
+
+            # recode the metrics
+            writer.add_scalar('Loss/train', train_loss, j)
+            writer.add_scalar('Loss/test', train_acc, j)
+            writer.add_scalar('Accuracy/train', test_loss, j)
+            writer.add_scalar('Accuracy/test', test_acc, j)
 
         # save result and get best epoch
         train_acc_list = np.array(train_acc_list)
@@ -363,9 +299,9 @@ if __name__ == "__main__":
     elif args.test == True:
 
         test_checkpoint = torch.load(test_checkpoint_path)
-        snn.load_state_dict(test_checkpoint["snn_state_dict"])
+        model.load_state_dict(test_checkpoint["snn_state_dict"])
 
-        test_acc, test_loss = test(snn, test_dataloader)
+        test_acc, test_loss = test(model, test_dataloader)
 
         logger.info('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
 
