@@ -221,16 +221,13 @@ class baseline_ann(torch.nn.Module):
         :return:
         """
 
-        axon3_states = self.axon3.create_init_states()
-        snn3_states = self.snn3.create_init_states()
-
         ann_l1 = self.relu1(self.bn1(self.mlp1(inputs)))
         drop_1 = self.dropout1(ann_l1)
 
         ann_l2 = self.relu2(self.bn2(self.mlp2(drop_1)))
         drop_2 = self.dropout2(ann_l2)
 
-        ann_l3 = self.sigm(self.bn2(self.mlp2(inputs)))
+        ann_l3 = self.sigm(self.bn2(self.mlp2(drop_2)))
         output = F.log_softmax(ann_l3, dim=1)
 
         return ann_l3
