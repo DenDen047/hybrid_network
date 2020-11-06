@@ -44,6 +44,7 @@ else:
 
 # arg parser
 parser = argparse.ArgumentParser(description='mlp snn')
+parser.add_argument('--model', type=str, help='model')
 parser.add_argument('--config_file', type=str, default='snn_mlp_1.yaml',
                     help='path to configuration file')
 parser.add_argument('--train', action='store_true',
@@ -209,7 +210,7 @@ def test(model, test_data_loader, writer=None):
 
 if __name__ == "__main__":
 
-    model = mlp_networks.baseline_ann(
+    model = eval(args.model)(
         batch_size,
         length,
         train_coefficients,
