@@ -55,8 +55,9 @@ parser.add_argument('--logging', action='store_true', default=True, help='if tru
 args = parser.parse_args()
 
 # setting of logging
+TIMESTAMP = time.strftime("%Y%m%d-%H%M%S")
 if args.logging:
-    log_fpath = '/logs/{}.log'.format(time.strftime("%Y%m%d-%H%M%S"))
+    log_fpath = f'/logs/{TIMESTAMP}.log'
     logging.basicConfig(
         filename=log_fpath,
         level=logging.DEBUG
@@ -218,7 +219,9 @@ if __name__ == "__main__":
         tau_s
     ).to(device)
 
-    writer = SummaryWriter()
+    writer_log_dir = f"/torch_logs/{TIMESTAMP}"
+    os.makedirs(writer_log_dir, exist_ok=True)
+    writer = SummaryWriter(log_dir=writer_log_dir)
 
     params = list(model.parameters())
 

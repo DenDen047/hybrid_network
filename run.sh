@@ -10,6 +10,7 @@ docker run -it --rm \
     -v "$CURRENT_PATH"/dataset:/dataset \
     -v "$CURRENT_PATH"/checkpoint:/checkpoint \
     -v "$CURRENT_PATH"/logs:/logs \
+    -v "$CURRENT_PATH"/torch_logs:/torch_logs \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash
