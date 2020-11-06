@@ -227,7 +227,7 @@ class baseline_ann(torch.nn.Module):
         ann_l2 = self.relu2(self.bn2(self.mlp2(drop_1)))
         drop_2 = self.dropout2(ann_l2)
 
-        ann_l3 = self.sigm(self.bn2(self.mlp2(drop_2)))
+        ann_l3 = self.sigm(self.bn3(self.mlp3(drop_2)))
         output = F.log_softmax(ann_l3, dim=1)
 
         return ann_l3
