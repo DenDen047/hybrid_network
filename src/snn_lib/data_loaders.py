@@ -72,7 +72,7 @@ class MNISTDataset(Dataset):
     transform: transform
     """
 
-    def __init__(self, torchvision_mnist, length, max_rate = 1, flatten = False, transform=None):
+    def __init__(self, torchvision_mnist, length, max_rate=1, flatten=False, transform=None):
         self.dataset = torchvision_mnist
         self.transform = transform
         self.flatten = flatten
@@ -85,7 +85,7 @@ class MNISTDataset(Dataset):
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
-        
+
         img = self.dataset[idx][0]
         if self.transform:
             img = self.transform(img)
@@ -103,7 +103,7 @@ def get_rand_transform(transform_config):
     t1_scale = transform_config['RandomResizedCrop']['scale']
     t1_ratio = transform_config['RandomResizedCrop']['ratio']
     t1 = transforms.RandomResizedCrop(t1_size, scale=t1_scale, ratio=t1_ratio, interpolation=2)
-    
+
     t2_angle = transform_config['RandomRotation']['angle']
     t2 = transforms.RandomRotation(t2_angle, resample=False, expand=False, center=None)
     t3 = transforms.Compose([t1, t2])

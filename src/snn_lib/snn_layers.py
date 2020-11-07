@@ -515,7 +515,7 @@ class dual_exp_iir_layer(torch.nn.Module):
 
     def forward(self, input_spikes, states):
         """
-        :param current_spike: [batch, dim0 ,dim1..]
+        :param current_spike: [batch, dim0, dim1..]
         :param  states: tuple (prev_t_1, prev_t_2)
         :return:
         """

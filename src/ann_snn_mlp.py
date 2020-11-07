@@ -35,6 +35,7 @@ import omegaconf
 from omegaconf import OmegaConf
 
 import mlp_networks
+import cnn_networks
 
 
 if torch.cuda.is_available():
