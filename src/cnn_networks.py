@@ -179,3 +179,158 @@ class baseline_snn(torch.nn.Module):
 
         return spike_l8
 
+
+class ann1_snn7(torch.nn.Module):
+    def __init__(self,
+        batch_size: int,
+        length: int,
+        train_coefficients: bool,
+        train_bias: bool,
+        membrane_filter: bool,
+        tau_m: int,
+        tau_s: int,
+    ):
+        super().__init__()
+
+        self.length = length
+        self.batch_size = batch_size
+
+        self.train_coefficients = train_coefficients
+        self.train_bias = train_bias
+        self.membrane_filter = membrane_filter
+
+        self.ann1 = ANN_Module(
+            nn.Conv2d,
+            in_channels=1,
+            out_channels=32,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.axon2 = dual_exp_iir_layer(
+            (32, 26, 26),
+            self.length, self.batch_size, tau_m, tau_s, train_coefficients
+        )
+        self.snn2 = conv2d_layer(
+            26, 26, 32,
+            out_channels=32,
+            kernel_size=3,
+            stride=1, padding=0, dilation=1,
+            step_num=self.length,
+            batch_size=self.batch_size,
+            tau_m=tau_m,
+            train_bias=self.train_bias,
+            membrane_filter=self.membrane_filter
+        )
+
+        self.axon3 = dual_exp_iir_layer(
+            (32, 24, 24),
+            self.length, self.batch_size, tau_m, tau_s, train_coefficients
+        )
+        self.snn3 = conv2d_layer(
+            24, 24, 32,
+            out_channels=64,
+            kernel_size=3,
+            stride=1, padding=0, dilation=1,
+            step_num=self.length,
+            batch_size=self.batch_size,
+            tau_m=tau_m,
+            train_bias=self.train_bias,
+            membrane_filter=self.membrane_filter
+        )
+
+        self.axon4 = dual_exp_iir_layer(
+            (64, 22, 22),
+            self.length, self.batch_size, tau_m, tau_s, train_coefficients
+        )
+        self.snn4 = maxpooling2d_layer(
+            22, 22, 64,
+            kernel_size=2,
+            stride=2,
+            padding=0, dilation=1,
+            step_num=self.length,
+            batch_size=self.batch_size
+        )
+
+        self.axon5 = dual_exp_iir_layer(
+            (64, 11, 11),
+            self.length, self.batch_size, tau_m, tau_s, train_coefficients
+        )
+        self.snn5 = conv2d_layer(
+            11, 11, 64,
+            out_channels=64,
+            kernel_size=3,
+            stride=1, padding=0, dilation=1,
+            step_num=self.length,
+            batch_size=self.batch_size,
+            tau_m=tau_m,
+            train_bias=self.train_bias,
+            membrane_filter=self.membrane_filter
+        )
+
+        self.axon6 = dual_exp_iir_layer(
+            (64, 9, 9),
+            self.length, self.batch_size, tau_m, tau_s, train_coefficients
+        )
+        self.snn6 = maxpooling2d_layer(
+            9, 9, 64,
+            kernel_size=2,
+            stride=2,
+            padding=0, dilation=1,
+            step_num=self.length,
+            batch_size=self.batch_size
+        )
+
+        self.axon7 = dual_exp_iir_layer((1024,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn7 = neuron_layer(1024, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+
+        self.axon8 = dual_exp_iir_layer((512,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn8 = neuron_layer(512, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+
+        # self.dropout1 = nn.Dropout(p=0.3, inplace=False)
+        # self.dropout2 = nn.Dropout(p=0.3, inplace=False)
+
+    def forward(self, inputs):
+        """
+        :param inputs: [batch, input_size, t]
+        :return:
+        """
+
+        axon2_states = self.axon2.create_init_states()
+        snn2_states = self.snn2.create_init_states()
+        axon3_states = self.axon3.create_init_states()
+        snn3_states = self.snn3.create_init_states()
+        axon4_states = self.axon4.create_init_states()
+        axon5_states = self.axon5.create_init_states()
+        snn5_states = self.snn5.create_init_states()
+        axon6_states = self.axon6.create_init_states()
+        axon7_states = self.axon7.create_init_states()
+        snn7_states = self.snn7.create_init_states()
+        axon8_states = self.axon8.create_init_states()
+        snn8_states = self.snn8.create_init_states()
+
+        ann1_out = self.ann1(inputs)
+
+        axon2_out, axon2_states = self.axon2(ann1_out, axon2_states)
+        spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
+
+        axon3_out, axon3_states = self.axon3(spike_l2, axon3_states)
+        spike_l3, snn3_states = self.snn3(axon3_out, snn3_states)
+
+        axon4_out, axon4_states = self.axon4(spike_l3, axon4_states)
+        spike_l4 = self.snn4(axon4_out)
+
+        axon5_out, axon5_states = self.axon5(spike_l4, axon5_states)
+        spike_l5, snn5_states = self.snn5(axon5_out, snn5_states)
+
+        axon6_out, axon6_states = self.axon6(spike_l5, axon6_states)
+        spike_l6 = self.snn6(axon6_out)
+
+        flatten_spike_l6 = torch.flatten(spike_l6, start_dim=1, end_dim=-2)
+        axon7_out, axon7_states = self.axon7(flatten_spike_l6, axon7_states)
+        spike_l7, snn7_states = self.snn7(axon7_out, snn7_states)
+
+        axon8_out, axon8_states = self.axon8(spike_l7, axon8_states)
+        spike_l8, snn8_states = self.snn8(axon8_out, snn8_states)
+
+        return spike_l8
