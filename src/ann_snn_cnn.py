@@ -187,7 +187,8 @@ def test(model, test_data_loader, writer=None):
 
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)
-        x_test = x_test.repeat(length, 1, 1).permute(1, 2, 0).to(device)
+        # reshape into [batch_size, dim0-2, time_length]
+        x_test = x_test[:, None, :, :].repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0).to(device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)
