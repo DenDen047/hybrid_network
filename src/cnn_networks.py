@@ -384,6 +384,7 @@ class ann4_snn4(torch.nn.Module):
             kernel_size=2,
             stride=2
         )
+        self.sigm = nn.Sigmoid()
 
         self.axon5 = dual_exp_iir_layer(
             (64, 11, 11),
@@ -442,7 +443,7 @@ class ann4_snn4(torch.nn.Module):
         ann3_out = F.relu(self.ann3(ann2_out, steady_state=True))
         ann4_out = self.ann4(ann3_out, steady_state=True)
 
-        axon5_out, axon5_states = self.axon5(F.sigmoid(ann4_out), axon5_states)
+        axon5_out, axon5_states = self.axon5(self.sigm(ann4_out), axon5_states)
         spike_l5, snn5_states = self.snn5(axon5_out, snn5_states)
 
         axon6_out, axon6_states = self.axon6(spike_l5, axon6_states)
@@ -507,7 +508,7 @@ class ann6_snn2(torch.nn.Module):
             stride=2
         )
 
-        self.ann3 = ANN_Module(
+        self.ann5 = ANN_Module(
             nn.Conv2d,
             in_channels=64,
             out_channels=64,
@@ -520,6 +521,7 @@ class ann6_snn2(torch.nn.Module):
             kernel_size=2,
             stride=2
         )
+        self.sigm = nn.Sigmoid()
 
         self.axon7 = dual_exp_iir_layer((1024,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn7 = neuron_layer(1024, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
@@ -536,7 +538,6 @@ class ann6_snn2(torch.nn.Module):
         :return:
         """
 
-        axon6_states = self.axon6.create_init_states()
         axon7_states = self.axon7.create_init_states()
         snn7_states = self.snn7.create_init_states()
         axon8_states = self.axon8.create_init_states()
@@ -549,7 +550,7 @@ class ann6_snn2(torch.nn.Module):
         ann5_out = F.relu(self.ann5(ann4_out, steady_state=True))
         ann6_out = self.ann6(ann5_out, steady_state=True)
 
-        flatten_spike_l6 = torch.flatten(F.sigmoid(ann6_out), start_dim=1, end_dim=-2)
+        flatten_spike_l6 = torch.flatten(self.sigm(ann6_out), start_dim=1, end_dim=-2)
         axon7_out, axon7_states = self.axon7(flatten_spike_l6, axon7_states)
         spike_l7, snn7_states = self.snn7(axon7_out, snn7_states)
 
