@@ -13,4 +13,8 @@ docker run -it --rm \
     -v "$CURRENT_PATH"/torch_logs:/torch_logs \
     -w /workdir \
     ${IMAGE_NAME} \
-    /bin/bash -c "python ann_snn_cnn.py --model cnn_networks.baseline_ann --train"
+    /bin/bash -c "\
+        python ann_snn_cnn.py --model cnn_networks.baseline_ann --train
+    "
+
+
