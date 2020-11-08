@@ -3,7 +3,7 @@
 CURRENT_PATH=$(pwd)
 IMAGE_NAME="denden047/snn_iir"
 
-docker build -t ${IMAGE_NAME} "$CURRENT_PATH"/docker && \
+docker build -q -t ${IMAGE_NAME} "$CURRENT_PATH"/docker && \
 docker run -it --rm \
     --gpus 0 \
     -v "$CURRENT_PATH"/src:/workdir \
@@ -13,4 +13,4 @@ docker run -it --rm \
     -v "$CURRENT_PATH"/torch_logs:/torch_logs \
     -w /workdir \
     ${IMAGE_NAME} \
-    /bin/bash -c "python ann_snn_cnn.py --model cnn_networks.ann1_snn7 --train"
+    /bin/bash -c "python ann_snn_cnn.py --model cnn_networks.baseline_ann --train"

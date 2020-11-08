@@ -309,7 +309,7 @@ class ann1_snn7(torch.nn.Module):
         axon8_states = self.axon8.create_init_states()
         snn8_states = self.snn8.create_init_states()
 
-        ann1_out = self.ann1(inputs)
+        ann1_out = self.ann1(inputs, steady_state=True)
 
         axon2_out, axon2_states = self.axon2(ann1_out, axon2_states)
         spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
@@ -334,3 +334,93 @@ class ann1_snn7(torch.nn.Module):
         spike_l8, snn8_states = self.snn8(axon8_out, snn8_states)
 
         return spike_l8
+
+
+class baseline_ann(torch.nn.Module):
+    def __init__(self,
+        batch_size: int,
+        length: int,
+        train_coefficients: bool,
+        train_bias: bool,
+        membrane_filter: bool,
+        tau_m: int,
+        tau_s: int,
+    ):
+        super().__init__()
+
+        self.length = length
+        self.batch_size = batch_size
+
+        self.train_coefficients = train_coefficients
+        self.train_bias = train_bias
+        self.membrane_filter = membrane_filter
+
+        self.ann1 = ANN_Module(
+            nn.Conv2d,
+            in_channels=1,
+            out_channels=32,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann2 = ANN_Module(
+            nn.Conv2d,
+            in_channels=32,
+            out_channels=32,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann3 = ANN_Module(
+            nn.Conv2d,
+            in_channels=32,
+            out_channels=64,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann4 = ANN_Module(
+            nn.MaxPool2d,
+            kernel_size=2,
+            stride=2
+        )
+
+        self.ann5 = ANN_Module(
+            nn.Conv2d,
+            in_channels=64,
+            out_channels=64,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann6 = ANN_Module(
+            nn.MaxPool2d,
+            kernel_size=2,
+            stride=2
+        )
+
+        self.mlp7 = ANN_Module(nn.Linear, in_features=1024, out_features=512)
+        self.bn7 = nn.BatchNorm1d(num_features=512)
+
+        self.mlp8 = ANN_Module(nn.Linear, in_features=512, out_features=10)
+        self.bn8 = nn.BatchNorm1d(num_features=10)
+
+    def forward(self, inputs):
+        """
+        :param inputs: [batch, input_size, t]
+        :return:
+        """
+
+        ann1_out = F.relu(self.ann1(inputs, steady_state=True))
+        ann2_out = F.relu(self.ann2(ann1_out, steady_state=True))
+        ann3_out = F.relu(self.ann3(ann2_out, steady_state=True))
+        ann4_out = F.relu(self.ann4(ann3_out, steady_state=True))
+        ann5_out = F.relu(self.ann5(ann4_out, steady_state=True))
+        ann6_out = self.ann6(ann5_out, steady_state=True)
+
+        flatten_ann6_out = torch.flatten(ann6_out, start_dim=1, end_dim=-2)
+        mlp7_out = F.relu(self.mlp7(flatten_ann6_out, steady_state=True))
+        mlp8_out = self.mlp8(mlp7_out, steady_state=True)
+        output = F.log_softmax(mlp8_out, dim=1)
+
+        return output
