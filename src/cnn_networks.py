@@ -309,7 +309,7 @@ class ann1_snn7(torch.nn.Module):
         axon8_states = self.axon8.create_init_states()
         snn8_states = self.snn8.create_init_states()
 
-        ann1_out = self.ann1(inputs, steady_state=True)
+        ann1_out = F.sigmoid(self.ann1(inputs, steady_state=True))
 
         axon2_out, axon2_states = self.axon2(ann1_out, axon2_states)
         spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
