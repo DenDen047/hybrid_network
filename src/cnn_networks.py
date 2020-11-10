@@ -35,11 +35,11 @@ class baseline_snn(torch.nn.Module):
         self.membrane_filter = membrane_filter
 
         self.axon1 = dual_exp_iir_layer(
-            (1, 28, 28),
+            (in_channels, 32, 32),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn1 = conv2d_layer(
-            28, 28, 1,
+            32, 32, in_channels,
             out_channels=32,
             kernel_size=3,
             stride=1, padding=0, dilation=1,
@@ -51,11 +51,11 @@ class baseline_snn(torch.nn.Module):
         )
 
         self.axon2 = dual_exp_iir_layer(
-            (32, 26, 26),
+            (32, 30, 30),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn2 = conv2d_layer(
-            26, 26, 32,
+            30, 30, 32,
             out_channels=32,
             kernel_size=3,
             stride=1, padding=0, dilation=1,
@@ -67,11 +67,11 @@ class baseline_snn(torch.nn.Module):
         )
 
         self.axon3 = dual_exp_iir_layer(
-            (32, 24, 24),
+            (32, 28, 28),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn3 = conv2d_layer(
-            24, 24, 32,
+            28, 28, 32,
             out_channels=64,
             kernel_size=3,
             stride=1, padding=0, dilation=1,
@@ -83,11 +83,11 @@ class baseline_snn(torch.nn.Module):
         )
 
         self.axon4 = dual_exp_iir_layer(
-            (64, 22, 22),
+            (64, 26, 26),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn4 = maxpooling2d_layer(
-            22, 22, 64,
+            26, 26, 64,
             kernel_size=2,
             stride=2,
             padding=0, dilation=1,
@@ -96,11 +96,11 @@ class baseline_snn(torch.nn.Module):
         )
 
         self.axon5 = dual_exp_iir_layer(
-            (64, 11, 11),
+            (64, 13, 13),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn5 = conv2d_layer(
-            11, 11, 64,
+            13, 13, 64,
             out_channels=64,
             kernel_size=3,
             stride=1, padding=0, dilation=1,
@@ -112,11 +112,11 @@ class baseline_snn(torch.nn.Module):
         )
 
         self.axon6 = dual_exp_iir_layer(
-            (64, 9, 9),
+            (64, 11, 11),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn6 = maxpooling2d_layer(
-            9, 9, 64,
+            11, 11, 64,
             kernel_size=2,
             stride=2,
             padding=0, dilation=1,
@@ -124,8 +124,8 @@ class baseline_snn(torch.nn.Module):
             batch_size=self.batch_size
         )
 
-        self.axon7 = dual_exp_iir_layer((1024,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
-        self.snn7 = neuron_layer(1024, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+        self.axon7 = dual_exp_iir_layer((1600,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn7 = neuron_layer(1600, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
         self.axon8 = dual_exp_iir_layer((512,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn8 = neuron_layer(512, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)

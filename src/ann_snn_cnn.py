@@ -124,11 +124,13 @@ dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False,
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def add_time_dim(x, device):
+def add_time_dim(x):
     img_shape = x.shape[1:]
     if len(img_shape) == 2:
         x = x[:, None, :, :]
-    return x.repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0).to(device)
+    elif len(img_shape) == 3:
+        x = x.permute(0, 3, 1, 2)
+    return x.repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0)
 
 
 ########################### train function ###################################
@@ -146,7 +148,7 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2, time_length]
-        x_train = add_time_dim(x_train, device)
+        x_train = add_time_dim(x_train).to(device)
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -194,7 +196,7 @@ def test(model, test_data_loader, writer=None):
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2, time_length]
-        x_test = add_time_dim(x_test, device)
+        x_test = add_time_dim(x_test).to(device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)

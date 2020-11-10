@@ -14,9 +14,7 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python ann_snn_mlp.py --model mlp_networks.ann1_snn2 --train && \
-        python ann_snn_mlp.py --model mlp_networks.ann2_snn1 --train && \
-        python ann_snn_mlp.py --model mlp_networks.baseline_ann --train \
+        python ann_snn_cnn.py --model cnn_networks.baseline_snn --train \
     "
 
 
