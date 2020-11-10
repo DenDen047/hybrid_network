@@ -50,16 +50,9 @@ parser.add_argument('--config_file', type=str, default='snn_mlp_1.yaml',
                     help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
-parser.add_argument('--steady_state', action='store_true', help='')
 parser.add_argument('--logging', action='store_true', default=True, help='if true, output the all image/pdf files during the process')
 
 args = parser.parse_args()
-
-# setting seed value
-torch.manual_seed(args.seed)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(args.seed)
 
 # setting of logging
 TIMESTAMP = time.strftime("%Y%m%d-%H%M%S")
@@ -223,8 +216,7 @@ if __name__ == "__main__":
         train_bias,
         membrane_filter,
         tau_m,
-        tau_s,
-        steady_state=args.steady_state
+        tau_s
     ).to(device)
 
     writer_log_dir = f"/torch_logs/{TIMESTAMP}"
