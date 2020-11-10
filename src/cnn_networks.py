@@ -17,6 +17,7 @@ class baseline_snn(torch.nn.Module):
     def __init__(self,
         batch_size: int,
         length: int,
+        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -27,6 +28,7 @@ class baseline_snn(torch.nn.Module):
 
         self.length = length
         self.batch_size = batch_size
+        self.in_channels = in_channels
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -184,6 +186,7 @@ class ann1_snn7(torch.nn.Module):
     def __init__(self,
         batch_size: int,
         length: int,
+        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -194,6 +197,7 @@ class ann1_snn7(torch.nn.Module):
 
         self.length = length
         self.batch_size = batch_size
+        self.in_channels = in_channels
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -201,7 +205,7 @@ class ann1_snn7(torch.nn.Module):
 
         self.ann1 = ANN_Module(
             nn.Conv2d,
-            in_channels=1,
+            in_channels=self.in_channels,
             out_channels=32,
             kernel_size=3,
             bias=self.train_bias
@@ -340,6 +344,7 @@ class ann4_snn4(torch.nn.Module):
     def __init__(self,
         batch_size: int,
         length: int,
+        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -350,6 +355,7 @@ class ann4_snn4(torch.nn.Module):
 
         self.length = length
         self.batch_size = batch_size
+        self.in_channels = in_channels
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -357,7 +363,7 @@ class ann4_snn4(torch.nn.Module):
 
         self.ann1 = ANN_Module(
             nn.Conv2d,
-            in_channels=1,
+            in_channels=self.in_channels,
             out_channels=32,
             kernel_size=3,
             bias=self.train_bias
@@ -463,6 +469,7 @@ class ann6_snn2(torch.nn.Module):
     def __init__(self,
         batch_size: int,
         length: int,
+        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -473,6 +480,7 @@ class ann6_snn2(torch.nn.Module):
 
         self.length = length
         self.batch_size = batch_size
+        self.in_channels = in_channels
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -480,7 +488,7 @@ class ann6_snn2(torch.nn.Module):
 
         self.ann1 = ANN_Module(
             nn.Conv2d,
-            in_channels=1,
+            in_channels=in_channels,
             out_channels=32,
             kernel_size=3,
             bias=self.train_bias
@@ -581,7 +589,7 @@ class baseline_ann(torch.nn.Module):
 
         self.ann1 = ANN_Module(
             nn.Conv2d,
-            in_channels=1,
+            in_channels=self.in_channels,
             out_channels=32,
             kernel_size=3,
             bias=self.train_bias

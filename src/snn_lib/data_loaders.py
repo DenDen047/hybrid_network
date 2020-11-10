@@ -13,6 +13,22 @@ import numpy as np
 from torchvision import transforms, utils
 import torch
 
+
+def get_rand_transform(transform_config):
+    t1_size = transform_config['RandomResizedCrop']['size']
+    t1_scale = transform_config['RandomResizedCrop']['scale']
+    t1_ratio = transform_config['RandomResizedCrop']['ratio']
+    t1 = transforms.RandomResizedCrop(t1_size, scale=t1_scale, ratio=t1_ratio, interpolation=2)
+
+    t2_angle = transform_config['RandomRotation']['angle']
+    t2 = transforms.RandomRotation(t2_angle, resample=False, expand=False, center=None)
+    t3 = transforms.Compose([t1, t2])
+
+    rand_transform = transforms.RandomApply([t1, t2, t3], p=transform_config['RandomApply']['probability'])
+
+    return rand_transform
+
+
 class MNISTDataset_Poisson_Spike(Dataset):
     """mnist dataset
 
@@ -62,7 +78,8 @@ class MNISTDataset_Poisson_Spike(Dataset):
 
         return spike_trains, self.dataset[idx][1]
 
-class MNISTDataset(Dataset):
+
+class TorchvisionDataset(Dataset):
     """mnist dataset
 
     torchvision_mnist: dataset object
@@ -90,24 +107,10 @@ class MNISTDataset(Dataset):
         if self.transform:
             img = self.transform(img)
 
-        img = np.array(self.dataset[idx][0],dtype=np.float32)/255.0 * self.max_rate
+        img = np.array(self.dataset[idx][0], dtype=np.float32) / 255.0 * self.max_rate
         shape = img.shape
         img_spike = None
         if self.flatten == True:
             img = img.reshape(-1)
 
         return img, self.dataset[idx][1]
-
-def get_rand_transform(transform_config):
-    t1_size = transform_config['RandomResizedCrop']['size']
-    t1_scale = transform_config['RandomResizedCrop']['scale']
-    t1_ratio = transform_config['RandomResizedCrop']['ratio']
-    t1 = transforms.RandomResizedCrop(t1_size, scale=t1_scale, ratio=t1_ratio, interpolation=2)
-
-    t2_angle = transform_config['RandomRotation']['angle']
-    t2 = transforms.RandomRotation(t2_angle, resample=False, expand=False, center=None)
-    t3 = transforms.Compose([t1, t2])
-
-    rand_transform = transforms.RandomApply([t1, t2, t3], p=transform_config['RandomApply']['probability'])
-
-    return rand_transform

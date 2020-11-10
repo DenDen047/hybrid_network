@@ -46,7 +46,7 @@ else:
 # arg parser
 parser = argparse.ArgumentParser(description='mlp snn')
 parser.add_argument('--model', type=str, help='model')
-parser.add_argument('--config_file', type=str, default='snn_mlp_1.yaml',
+parser.add_argument('--config_file', type=str, default='ann_snn_cnn.yaml',
                     help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
@@ -74,6 +74,7 @@ else:
     logger.info(f'Config file provided: {args.config_file}')
 
 conf = OmegaConf.load(args.config_file)
+logger.debug(conf)
 
 torch.manual_seed(conf['pytorch_seed'])
 np.random.seed(conf['pytorch_seed'])
@@ -102,8 +103,10 @@ membrane_filter = hyperparam_conf['membrane_filter']
 train_bias = hyperparam_conf['train_bias']
 train_coefficients = hyperparam_conf['train_coefficients']
 
-# %% mnist config
-dataset_config = conf['mnist_config']
+# %% dataset config
+dataset_config = conf['dataset_config']
+dataset_name = dataset_config['name']
+in_channels = dataset_config['in_channels']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
 
@@ -113,14 +116,19 @@ if use_transform == True:
 else:
     rand_transform = None
 
-# load mnist training dataset
-mnist_trainset = datasets.MNIST(root='/dataset', train=True, download=True, transform=rand_transform)
-
-# load mnist test dataset
-mnist_testset = datasets.MNIST(root='/dataset', train=False, download=True, transform=None)
+# load dataset training & test dataset
+dataset_trainset = eval(f'datasets.{dataset_name}')(root='/dataset', train=True, download=True, transform=rand_transform)
+dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False, download=True, transform=None)
 
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
+
+
+def add_time_dim(x, device):
+    img_shape = x.shape[1:]
+    if len(img_shape) == 2:
+        x = x[:, None, :, :]
+    return x.repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0).to(device)
 
 
 ########################### train function ###################################
@@ -138,7 +146,7 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2, time_length]
-        x_train = x_train[:, None, :, :].repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0).to(device)
+        x_train = add_time_dim(x_train, device)
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -186,7 +194,7 @@ def test(model, test_data_loader, writer=None):
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2, time_length]
-        x_test = x_test[:, None, :, :].repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0).to(device)
+        x_test = add_time_dim(x_test, device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -214,6 +222,7 @@ if __name__ == "__main__":
     model = eval(args.model)(
         batch_size,
         length,
+        in_channels,
         train_coefficients,
         train_bias,
         membrane_filter,
@@ -231,10 +240,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = MNISTDataset(mnist_trainset, max_rate=1, length=length, flatten=False)
+    train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    test_data = MNISTDataset(mnist_testset, max_rate=1, length=length, flatten=False)
+    test_data = TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []
