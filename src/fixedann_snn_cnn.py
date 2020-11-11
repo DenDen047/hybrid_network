@@ -302,7 +302,7 @@ if __name__ == "__main__":
         train_bias,
     ).to(device)
     pretrained_ann_checkpoint = torch.load(pretrained_ann_path)
-    feature_extractor.load_state_dict(pretrained_ann_checkpoint["snn_state_dict"])
+    feature_extractor.load_state_dict(pretrained_ann_checkpoint["model_state_dict"])
 
     # prepare train dataset
     train_data = FeatureDataset(
