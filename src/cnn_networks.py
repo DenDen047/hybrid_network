@@ -635,10 +635,86 @@ class baseline_ann(torch.nn.Module):
         )
 
         self.mlp7 = ANN_Module(nn.Linear, in_features=1600, out_features=512)
-        self.bn7 = nn.BatchNorm1d(num_features=512)
 
         self.mlp8 = ANN_Module(nn.Linear, in_features=512, out_features=10)
-        self.bn8 = nn.BatchNorm1d(num_features=10)
+
+    def forward(self, inputs):
+        """
+        :param inputs: [batch, input_size, t]
+        :return:
+        """
+
+        ann1_out = F.relu(self.ann1(inputs, steady_state=True))
+        ann2_out = F.relu(self.ann2(ann1_out, steady_state=True))
+        ann3_out = F.relu(self.ann3(ann2_out, steady_state=True))
+        ann4_out = self.ann4(ann3_out, steady_state=True)
+        ann5_out = F.relu(self.ann5(ann4_out, steady_state=True))
+        ann6_out = self.ann6(ann5_out, steady_state=True)
+
+        flatten_ann6_out = torch.flatten(ann6_out, start_dim=1, end_dim=-2)
+        mlp7_out = F.relu(self.mlp7(flatten_ann6_out, steady_state=True))
+        mlp8_out = self.mlp8(mlp7_out, steady_state=True)
+        output = F.log_softmax(mlp8_out, dim=1)
+
+        return output
+
+
+class pretrained_model(torch.nn.Module):
+    def __init__(self,
+        batch_size: int,
+        length: int,
+        in_channels: int,
+        train_bias: bool,
+    ):
+        super().__init__()
+
+        self.length = length
+        self.batch_size = batch_size
+        self.in_channels = in_channels
+
+        self.train_bias = train_bias
+
+        self.ann1 = nn.Conv2d(
+            in_channels=self.in_channels,
+            out_channels=32,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann2 = nn.Conv2d(
+            in_channels=32,
+            out_channels=32,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann3 = nn.Conv2d(
+            in_channels=32,
+            out_channels=64,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann4 = nn.MaxPool2d(
+            kernel_size=2,
+            stride=2
+        )
+
+        self.ann5 = nn.Conv2d(
+            in_channels=64,
+            out_channels=64,
+            kernel_size=3,
+            bias=self.train_bias
+        )
+
+        self.ann6 = nn.MaxPool2d(
+            kernel_size=2,
+            stride=2
+        )
+
+        self.mlp7 = nn.Linear(in_features=1600, out_features=512)
+
+        self.mlp8 = nn.Linear(in_features=512, out_features=10)
 
     def forward(self, inputs):
         """

@@ -13,6 +13,7 @@ import os
 import time
 import sys
 import logging
+import shutil
 from typing import Any, Callable, Optional, Tuple
 
 import torch
@@ -45,8 +46,8 @@ else:
     device = torch.device('cpu')
 
 # arg parser
-parser = argparse.ArgumentParser(description='mlp snn')
-parser.add_argument('--model', type=str, help='model')
+parser = argparse.ArgumentParser(description='Generating pretrained model of ANN')
+parser.add_argument('--model', default='cnn_networks.pretrained_model', type=str, help='model')
 parser.add_argument('--config_file', type=str, default='ann_snn_cnn.yaml',
                     help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
@@ -92,19 +93,9 @@ pretrained_ann_path = conf['pretrained_ann_path']
 
 # %% training parameters
 hyperparam_conf = conf['hyperparameters']
-length = hyperparam_conf['length']
 batch_size = hyperparam_conf['batch_size']
-synapse_type = hyperparam_conf['synapse_type']
 epoch = hyperparam_conf['epoch']
-tau_m = hyperparam_conf['tau_m']
-tau_s = hyperparam_conf['tau_s']
-filter_tau_m = hyperparam_conf['filter_tau_m']
-filter_tau_s = hyperparam_conf['filter_tau_s']
-
-membrane_filter = hyperparam_conf['membrane_filter']
-
 train_bias = hyperparam_conf['train_bias']
-train_coefficients = hyperparam_conf['train_coefficients']
 
 # %% dataset config
 dataset_config = conf['dataset_config']
@@ -120,54 +111,6 @@ else:
     rand_transform = None
 
 
-class FeatureDataset(object):
-    def __init__(
-        self,
-        torchvision_dataset: Any,
-        feature_extractor: Any,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-    ):
-        self.torchvision_dataset = torchvision_dataset
-        self.feature_extractor = feature_extractor
-        self.transform = transform
-        self.target_transform = target_transform
-
-        self._generate_features()
-
-    def _generate_features(self) -> None:
-        self.data = []
-        self.targets = []
-
-        for img, target in self.torchvision_dataset:
-            feature = self.feature_extractor(img).features
-            self.data.append(feature)
-
-    def __getitem__(self, index: int) -> Tuple[Any, Any]:
-        """
-        Args:
-            index (int): Index
-
-        Returns:
-            tuple: (image, target) where target is index of the target class.
-        """
-        img, target = self.data[index], self.targets[index]
-
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(img)
-
-        if self.transform is not None:
-            img = self.transform(img)
-
-        if self.target_transform is not None:
-            target = self.target_transform(target)
-
-        return img, target
-
-    def __len__(self) -> int:
-        return len(self.data)
-
 # load dataset training & test dataset
 dataset_trainset = eval(f'datasets.{dataset_name}')(root='/dataset', train=True, download=True, transform=rand_transform)
 dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False, download=True, transform=None)
@@ -176,13 +119,8 @@ dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False,
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def add_time_dim(x):
-    img_shape = x.shape[1:]
-    if len(img_shape) == 2:
-        x = x[:, None, :, :]
-    elif len(img_shape) == 3:
-        x = x.permute(0, 3, 1, 2)
-    return x.repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0)
+def hwc2chw(x):
+    return x.permute(0, 3, 1, 2)
 
 
 ########################### train function ###################################
@@ -199,19 +137,17 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2, time_length]
-        x_train = add_time_dim(x_train).to(device)
-        out_spike = model(x_train)
-
-        spike_count = torch.sum(out_spike, dim=2)
+        # reshape into [batch_size, dim0-2]
+        x_train = hwc2chw(x_train).to(device)
+        output = model(x_train)
 
         model.zero_grad()
-        loss = criterion(spike_count, target.long())
+        loss = criterion(output, target.long())
         loss.backward()
         optimizer.step()
 
         # calculate acc
-        _, idx = torch.max(spike_count, dim=1)
+        _, idx = torch.max(output, dim=1)
 
         eval_image_number += len(sample_batched[1])
         wrong = len(torch.where(idx != target)[0])
@@ -247,16 +183,14 @@ def test(model, test_data_loader, writer=None):
 
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2, time_length]
-        x_test = add_time_dim(x_test).to(device)
-        out_spike = model(x_test)
+        # reshape into [batch_size, dim0-2]
+        x_test = hwc2chw(x_test).to(device)
+        output = model(x_test)
 
-        spike_count = torch.sum(out_spike, dim=2)
-
-        loss = criterion(spike_count, target.long())
+        loss = criterion(output, target.long())
 
         # calculate acc
-        _, idx = torch.max(spike_count, dim=1)
+        _, idx = torch.max(output, dim=1)
 
         eval_image_number += len(sample_batched[1])
         wrong = len(torch.where(idx != target)[0])
@@ -277,11 +211,7 @@ if __name__ == "__main__":
         batch_size,
         length,
         in_channels,
-        train_coefficients,
         train_bias,
-        membrane_filter,
-        tau_m,
-        tau_s
     ).to(device)
 
     writer_log_dir = f"/torch_logs/{TIMESTAMP}"
@@ -294,28 +224,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    # load the feature extractor
-    feature_extractor = cnn_networks.pretrained_model(
-        batch_size,
-        length,
-        in_channels,
-        train_bias,
-    ).to(device)
-    pretrained_ann_checkpoint = torch.load(pretrained_ann_path)
-    feature_extractor.load_state_dict(pretrained_ann_checkpoint["snn_state_dict"])
-
-    # prepare train dataset
-    train_data = FeatureDataset(
-        TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False),
-        feature_extractor,
-    )
+    train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    # prepare test dataset
-    test_data = FeatureDataset(
-        TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False),
-        feature_extractor,
-    )
+    test_data = TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []
@@ -343,7 +255,7 @@ if __name__ == "__main__":
 
                 torch.save({
                     'epoch': j,
-                    'snn_state_dict': model.state_dict(),
+                    'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'loss': train_loss,
                 }, checkpoint_path)
@@ -377,6 +289,10 @@ if __name__ == "__main__":
 
         best_checkpoint = checkpoint_list[best_test_epoch]
 
+        # rename the best checkpoint
+        shutil.copyfile(best_checkpoint, pretrained_ann_path)
+        logger.info(f'Pretrained ANN model: {pretrained_ann_path}')
+
         logger.info('Summary:')
         logger.info('Best train acc: {}, epoch: {}'.format(best_train_acc, best_train_epoch))
         logger.info('Best test acc: {}, epoch: {}'.format(best_test_acc, best_test_epoch))
@@ -390,4 +306,6 @@ if __name__ == "__main__":
         test_acc, test_loss = test(model, test_dataloader)
 
         logger.info('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
+
+
 
