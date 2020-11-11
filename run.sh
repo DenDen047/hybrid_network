@@ -20,5 +20,3 @@ docker run -it --rm \
         python ann_snn_cnn.py --model cnn_networks.ann6_snn2 --train && \
         python ann_snn_cnn.py --model cnn_networks.baseline_ann --train \
     "
-
-
