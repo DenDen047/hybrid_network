@@ -90,7 +90,6 @@ class ann1_snn2(torch.nn.Module):
         self.batch_size = batch_size
 
         self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
-        self.bn1 = nn.BatchNorm1d(num_features=500)
         self.sigm = nn.Sigmoid()
 
         self.train_coefficients = train_coefficients
@@ -118,7 +117,7 @@ class ann1_snn2(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        ann_out = self.sigm(self.bn1(self.mlp1(inputs)))
+        ann_out = self.sigm(self.mlp1(inputs, steady_state=True))
         drop_1 = self.dropout1(ann_out)
 
         axon2_out, axon2_states = self.axon2(drop_1, axon2_states)
@@ -147,11 +146,9 @@ class ann2_snn1(torch.nn.Module):
         self.batch_size = batch_size
 
         self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
-        self.bn1 = nn.BatchNorm1d(num_features=500)
         self.relu1 = nn.ReLU()
 
         self.mlp2 = ANN_Module(nn.Linear, in_features=500, out_features=500)
-        self.bn2 = nn.BatchNorm1d(num_features=500)
         self.sigm = nn.Sigmoid()
 
         self.train_coefficients = train_coefficients
@@ -173,10 +170,10 @@ class ann2_snn1(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        ann_l1 = self.relu1(self.bn1(self.mlp1(inputs)))
+        ann_l1 = self.relu1(self.mlp1(inputs, steady_state=True))
         drop_1 = self.dropout1(ann_l1)
 
-        ann_l2 = self.sigm(self.bn2(self.mlp2(drop_1)))
+        ann_l2 = self.sigm(self.mlp2(drop_1, steady_state=True))
         drop_2 = self.dropout2(ann_l2)
 
         axon3_out, axon3_states = self.axon3(drop_2, axon3_states)
@@ -194,13 +191,11 @@ class baseline_ann(torch.nn.Module):
         membrane_filter: bool,
         tau_m: int,
         tau_s: int,
-        steady_state: bool = False,
     ):
         super().__init__()
 
         self.length = length
         self.batch_size = batch_size
-        self.steady_state = steady_state
 
         self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
         self.relu1 = nn.ReLU()
@@ -209,7 +204,6 @@ class baseline_ann(torch.nn.Module):
         self.relu2 = nn.ReLU()
 
         self.mlp3 = ANN_Module(nn.Linear, in_features=500, out_features=10)
-        self.sigm = nn.Sigmoid()
 
         self.dropout1 = nn.Dropout(p=0.3, inplace=False)
         self.dropout2 = nn.Dropout(p=0.3, inplace=False)
@@ -220,13 +214,13 @@ class baseline_ann(torch.nn.Module):
         :return:
         """
 
-        ann_l1 = self.relu1(self.mlp1(inputs, steady_state=self.steady_state))
+        ann_l1 = self.relu1(self.mlp1(inputs, steady_state=True))
         drop_1 = self.dropout1(ann_l1)
 
-        ann_l2 = self.relu2(self.mlp2(drop_1, steady_state=self.steady_state))
+        ann_l2 = self.relu2(self.mlp2(drop_1, steady_state=True))
         drop_2 = self.dropout2(ann_l2)
 
-        ann_l3 = self.sigm(self.mlp3(drop_2, steady_state=self.steady_state))
+        ann_l3 = self.mlp3(drop_2, steady_state=True)
         output = F.log_softmax(ann_l3, dim=1)
 
         return output
