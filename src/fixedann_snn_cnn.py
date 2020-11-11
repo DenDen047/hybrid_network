@@ -297,7 +297,6 @@ if __name__ == "__main__":
     # load the feature extractor
     feature_extractor = cnn_networks.pretrained_model(
         batch_size,
-        length,
         in_channels,
         train_bias,
     ).to(device)

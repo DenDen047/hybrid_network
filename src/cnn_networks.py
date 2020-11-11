@@ -662,13 +662,11 @@ class baseline_ann(torch.nn.Module):
 class pretrained_model(torch.nn.Module):
     def __init__(self,
         batch_size: int,
-        length: int,
         in_channels: int,
         train_bias: bool,
     ):
         super().__init__()
 
-        self.length = length
         self.batch_size = batch_size
         self.in_channels = in_channels
 
@@ -722,16 +720,16 @@ class pretrained_model(torch.nn.Module):
         :return:
         """
 
-        ann1_out = F.relu(self.ann1(inputs, steady_state=True))
-        ann2_out = F.relu(self.ann2(ann1_out, steady_state=True))
-        ann3_out = F.relu(self.ann3(ann2_out, steady_state=True))
-        ann4_out = self.ann4(ann3_out, steady_state=True)
-        ann5_out = F.relu(self.ann5(ann4_out, steady_state=True))
-        ann6_out = self.ann6(ann5_out, steady_state=True)
+        ann1_out = F.relu(self.ann1(inputs))
+        ann2_out = F.relu(self.ann2(ann1_out))
+        ann3_out = F.relu(self.ann3(ann2_out))
+        ann4_out = self.ann4(ann3_out)
+        ann5_out = F.relu(self.ann5(ann4_out))
+        ann6_out = self.ann6(ann5_out)
 
-        flatten_ann6_out = torch.flatten(ann6_out, start_dim=1, end_dim=-2)
-        mlp7_out = F.relu(self.mlp7(flatten_ann6_out, steady_state=True))
-        mlp8_out = self.mlp8(mlp7_out, steady_state=True)
+        flatten_ann6_out = torch.flatten(ann6_out, start_dim=1)
+        mlp7_out = F.relu(self.mlp7(flatten_ann6_out))
+        mlp8_out = self.mlp8(mlp7_out)
         output = F.log_softmax(mlp8_out, dim=1)
 
         return output

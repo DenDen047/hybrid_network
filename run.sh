@@ -5,7 +5,7 @@ IMAGE_NAME="denden047/snn_iir"
 
 docker build -q -t ${IMAGE_NAME} "$CURRENT_PATH"/docker && \
 docker run -it --rm \
-    --gpus 0 \
+    --gpus 1 \
     -v "$CURRENT_PATH"/src:/workdir \
     -v "$CURRENT_PATH"/dataset:/dataset \
     -v "$CURRENT_PATH"/checkpoint:/checkpoint \
@@ -13,10 +13,11 @@ docker run -it --rm \
     -v "$CURRENT_PATH"/torch_logs:/torch_logs \
     -w /workdir \
     ${IMAGE_NAME} \
-    /bin/bash -c "\
-        python ann_snn_cnn.py --model cnn_networks.baseline_snn --train && \
-        python ann_snn_cnn.py --model cnn_networks.ann1_snn7 --train && \
-        python ann_snn_cnn.py --model cnn_networks.ann4_snn4 --train && \
-        python ann_snn_cnn.py --model cnn_networks.ann6_snn2 --train && \
-        python ann_snn_cnn.py --model cnn_networks.baseline_ann --train \
-    "
+    /bin/bash
+    # -c "\
+    #     python ann_snn_cnn.py --model cnn_networks.baseline_snn --train && \
+    #     python ann_snn_cnn.py --model cnn_networks.ann1_snn7 --train && \
+    #     python ann_snn_cnn.py --model cnn_networks.ann4_snn4 --train && \
+    #     python ann_snn_cnn.py --model cnn_networks.ann6_snn2 --train && \
+    #     python ann_snn_cnn.py --model cnn_networks.baseline_ann --train \
+    # "

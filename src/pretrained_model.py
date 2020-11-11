@@ -30,7 +30,7 @@ from torchsummary import summary
 from snn_lib.snn_layers import *
 from snn_lib.optimizers import *
 from snn_lib.schedulers import *
-from snn_lib.data_loaders import TorchvisionDataset
+from snn_lib.data_loaders import TorchvisionDataset, get_rand_transform
 import snn_lib.utilities
 
 import omegaconf
@@ -209,7 +209,6 @@ if __name__ == "__main__":
 
     model = eval(args.model)(
         batch_size,
-        length,
         in_channels,
         train_bias,
     ).to(device)
@@ -224,10 +223,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False)
+    train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=1, flatten=False)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    test_data = TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False)
+    test_data = TorchvisionDataset(dataset_testset, max_rate=1, length=1, flatten=False)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []
