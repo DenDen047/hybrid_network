@@ -16,6 +16,9 @@ RUN pip install -r requirements.txt
 
 # torch
 RUN pip install torchsummary
+# for video processing
+RUN apt-get install -y libavformat-dev libavdevice-dev wget unrar
+RUN pip install av==6.2.0
 
 # clearn
 RUN rm -rf /var/lib/apt/lists/*
