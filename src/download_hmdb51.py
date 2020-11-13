@@ -58,31 +58,6 @@ if __name__ == "__main__":
 
 
 
-# # Extract and organize video data..
-# ! mkdir -p video_data test_train_splits
-# ! unrar e test_train_splits.rar test_train_splits
-# ! rm test_train_splits.rar
-# ! unrar e hmdb51_org.rar
-# ! rm hmdb51_org.rar
-# ! mv *.rar video_data
-# for files in os.listdir('video_data'):
-#     foldername = files.split('.')[0]
-#     os.system("mkdir -p video_data/" + foldername)
-#     os.system("unrar e video_data/"+ files + " video_data/"+foldername)
-
-# ! rm video_data/*.rar
-
-# # diagnostics for PyAV installation. For now version 6.2.0 works
-# def run_av_diagnostics():
-#     import av
-#     av.open("video_data/brush_hair/Aussie_Brunette_Brushing_Hair_II_brush_hair_u_nm_np1_ba_goo_4.avi")
-#     print(get_video_backend())
-#     av.logging.set_level(av.logging.ERROR)
-#     if not hasattr(av.video.frame.VideoFrame, 'pict_type'):
-#       print("Nah")
-
-# run_av_diagnostics()
-
 # # memory footprint support libraries/code
 # !ln -sf /opt/bin/nvidia-smi /usr/bin/nvidia-smi
 # !pip install gputil
