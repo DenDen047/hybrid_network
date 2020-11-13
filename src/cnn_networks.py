@@ -570,7 +570,8 @@ class ann6_snn2(torch.nn.Module):
 
 
 class baseline_ann(torch.nn.Module):
-    def __init__(self,
+    def __init__(
+        self,
         batch_size: int,
         length: int,
         in_channels: int,
