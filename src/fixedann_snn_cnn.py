@@ -14,6 +14,7 @@ import time
 import sys
 import logging
 from typing import Any, Callable, Optional, Tuple
+from PIL import Image
 
 import torch
 import numpy as np
@@ -29,7 +30,7 @@ from torchsummary import summary
 from snn_lib.snn_layers import *
 from snn_lib.optimizers import *
 from snn_lib.schedulers import *
-from snn_lib.data_loaders import TorchvisionDataset
+from snn_lib.data_loaders import *
 import snn_lib.utilities
 
 import omegaconf
@@ -37,6 +38,7 @@ from omegaconf import OmegaConf
 
 import mlp_networks
 import cnn_networks
+import utils
 
 
 if torch.cuda.is_available():
@@ -73,6 +75,7 @@ if args.config_file is None:
     logger.info('No config file provided, use default config file')
 else:
     logger.info(f'Config file provided: {args.config_file}')
+logger.info(args)
 
 conf = OmegaConf.load(args.config_file)
 logger.debug(conf)
@@ -125,11 +128,13 @@ class FeatureDataset(object):
         self,
         torchvision_dataset: Any,
         feature_extractor: Any,
+        target_module: Any,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ):
         self.torchvision_dataset = torchvision_dataset
         self.feature_extractor = feature_extractor
+        self.target_module = target_module
         self.transform = transform
         self.target_transform = target_transform
 
@@ -138,9 +143,28 @@ class FeatureDataset(object):
     def _generate_features(self) -> None:
         self.data = []
         self.targets = []
+        feature = None
+
+        feature = {}
+        def get_feature(name):
+            def hook(model, input, output):
+                feature[name] = output.detach()
+            return hook
+
+        self.target_module.register_forward_hook(get_feature('ann1'))
+
+        self.feature_extractor.eval()
 
         for img, target in self.torchvision_dataset:
-            feature = self.feature_extractor(img).features
+            if self.transform is not None:
+                img = self.transform(img)
+
+            img = utils.np_hwc2chw(img)
+            img = torch.from_numpy(img).unsqueeze(0).to(device)
+            print(feature, img.shape)
+            self.feature_extractor(img)
+            print(feature['ann1'].shape)
+            sys.exit(1)
             self.data.append(feature)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
@@ -307,6 +331,7 @@ if __name__ == "__main__":
     train_data = FeatureDataset(
         TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False),
         feature_extractor,
+        feature_extractor.ann1
     )
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
@@ -314,6 +339,7 @@ if __name__ == "__main__":
     test_data = FeatureDataset(
         TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False),
         feature_extractor,
+        feature_extractor.ann1
     )
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 

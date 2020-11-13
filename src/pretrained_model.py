@@ -39,6 +39,8 @@ from omegaconf import OmegaConf
 import mlp_networks
 import cnn_networks
 
+import utils
+
 
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
@@ -119,10 +121,6 @@ dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False,
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def hwc2chw(x):
-    return x.permute(0, 3, 1, 2)
-
-
 ########################### train function ###################################
 def train(model, optimizer, scheduler, train_data_loader, writer=None):
     eval_image_number = 0
@@ -138,7 +136,7 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2]
-        x_train = hwc2chw(x_train).to(device)
+        x_train = utils.bhwc2bchw(x_train).to(device)
         output = model(x_train)
 
         model.zero_grad()
