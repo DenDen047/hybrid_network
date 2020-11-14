@@ -143,15 +143,14 @@ class FeatureDataset(object):
     def _generate_features(self) -> None:
         self.data = []
         self.targets = []
-        feature = None
 
-        feature = {}
+        intermediate_info = {}
         def get_feature(name):
             def hook(model, input, output):
-                feature[name] = output.detach()
+                intermediate_info[name] = output.detach()
             return hook
 
-        self.target_module.register_forward_hook(get_feature('ann1'))
+        self.target_module.register_forward_hook(get_feature('feature'))
 
         self.feature_extractor.eval()
 
@@ -161,11 +160,11 @@ class FeatureDataset(object):
 
             img = utils.np_hwc2chw(img)
             img = torch.from_numpy(img).unsqueeze(0).to(device)
-            print(feature, img.shape)
             self.feature_extractor(img)
-            print(feature['ann1'].shape)
-            sys.exit(1)
+
+            feature = intermediate_info['feature']
             self.data.append(feature)
+            self.targets.append(target)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
