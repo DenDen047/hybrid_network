@@ -15,6 +15,7 @@ import sys
 import logging
 from typing import Any, Callable, Optional, Tuple
 from PIL import Image
+from tqdm import tqdm
 
 import torch
 import numpy as np
@@ -38,6 +39,7 @@ from omegaconf import OmegaConf
 
 import mlp_networks
 import cnn_networks
+import fixed_cnn_networks
 import utils
 
 
@@ -153,18 +155,21 @@ class FeatureDataset(object):
         self.target_module.register_forward_hook(get_feature('feature'))
 
         self.feature_extractor.eval()
+        with torch.no_grad():
+            for img, target in tqdm(self.torchvision_dataset):
+                if self.transform is not None:
+                    img = self.transform(img)
 
-        for img, target in self.torchvision_dataset:
-            if self.transform is not None:
-                img = self.transform(img)
+                img = utils.np_hwc2chw(img)
+                img = torch.from_numpy(img).unsqueeze(0).to(device)
+                self.feature_extractor(img)
 
-            img = utils.np_hwc2chw(img)
-            img = torch.from_numpy(img).unsqueeze(0).to(device)
-            self.feature_extractor(img)
+                feature = intermediate_info['feature']
+                self.data.append(feature.to(device))
+                self.targets.append(target)
 
-            feature = intermediate_info['feature']
-            self.data.append(feature)
-            self.targets.append(target)
+        # remove needless variables
+        del self.feature_extractor
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
@@ -174,19 +179,15 @@ class FeatureDataset(object):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], self.targets[index]
-
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(img)
+        data, target = self.data[index], self.targets[index]
 
         if self.transform is not None:
-            img = self.transform(img)
+            data = self.transform(data)
 
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        return img, target
+        return data, target
 
     def __len__(self) -> int:
         return len(self.data)
@@ -200,12 +201,7 @@ acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
 def add_time_dim(x):
-    img_shape = x.shape[1:]
-    if len(img_shape) == 2:
-        x = x[:, None, :, :]
-    elif len(img_shape) == 3:
-        x = x.permute(0, 3, 1, 2)
-    return x.repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0)
+    return x.repeat(1, length, 1, 1, 1).permute(0, 2, 3, 4, 1)
 
 
 ########################### train function ###################################
@@ -262,34 +258,34 @@ def test(model, test_data_loader, writer=None):
     correct_total = 0
     wrong_total = 0
 
-    model.eval()
-
     criterion = torch.nn.CrossEntropyLoss()
 
-    for i_batch, sample_batched in enumerate(test_data_loader):
+    model.eval()
+    with torch.no_grad():
+        for i_batch, sample_batched in enumerate(test_data_loader):
 
-        x_test = sample_batched[0]
-        target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2, time_length]
-        x_test = add_time_dim(x_test).to(device)
-        out_spike = model(x_test)
+            x_test = sample_batched[0]
+            target = sample_batched[1].to(device)
+            # reshape into [batch_size, dim0-2, time_length]
+            x_test = add_time_dim(x_test).to(device)
+            out_spike = model(x_test)
 
-        spike_count = torch.sum(out_spike, dim=2)
+            spike_count = torch.sum(out_spike, dim=2)
 
-        loss = criterion(spike_count, target.long())
+            loss = criterion(spike_count, target.long())
 
-        # calculate acc
-        _, idx = torch.max(spike_count, dim=1)
+            # calculate acc
+            _, idx = torch.max(spike_count, dim=1)
 
-        eval_image_number += len(sample_batched[1])
-        wrong = len(torch.where(idx != target)[0])
+            eval_image_number += len(sample_batched[1])
+            wrong = len(torch.where(idx != target)[0])
 
-        correct = len(sample_batched[1]) - wrong
-        wrong_total += len(torch.where(idx != target)[0])
-        correct_total += correct
+            correct = len(sample_batched[1]) - wrong
+            wrong_total += len(torch.where(idx != target)[0])
+            correct_total += correct
+            acc = correct_total / eval_image_number
+
         acc = correct_total / eval_image_number
-
-    acc = correct_total / eval_image_number
 
     return acc, loss
 
@@ -318,7 +314,7 @@ if __name__ == "__main__":
     scheduler = get_scheduler(optimizer, conf)
 
     # load the feature extractor
-    feature_extractor = cnn_networks.pretrained_model(
+    feature_extractor = fixed_cnn_networks.pretrained_model(
         batch_size,
         in_channels,
         train_bias,
@@ -330,7 +326,7 @@ if __name__ == "__main__":
     train_data = FeatureDataset(
         TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False),
         feature_extractor,
-        feature_extractor.ann1
+        eval(f'feature_extractor.{model.feature_module}')
     )
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
@@ -338,7 +334,7 @@ if __name__ == "__main__":
     test_data = FeatureDataset(
         TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False),
         feature_extractor,
-        feature_extractor.ann1
+        eval(f'feature_extractor.{model.feature_module}')
     )
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
