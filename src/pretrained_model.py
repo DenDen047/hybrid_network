@@ -22,7 +22,7 @@ import random
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets
-from torchvision import transforms, utils
+from torchvision import transforms
 import torch.nn as nn
 import torch.nn.functional as F
 from torchsummary import summary
@@ -36,8 +36,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import mlp_networks
-import cnn_networks
+import networks.fixed_mlp_networks
 
 import utils
 
@@ -49,9 +48,8 @@ else:
 
 # arg parser
 parser = argparse.ArgumentParser(description='Generating pretrained model of ANN')
-parser.add_argument('--model', default='cnn_networks.pretrained_model', type=str, help='model')
-parser.add_argument('--config_file', type=str, default='ann_snn_cnn.yaml',
-                    help='path to configuration file')
+parser.add_argument('--model', type=str, help='model')
+parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
 parser.add_argument('--logging', action='store_true', default=True, help='if true, output the all image/pdf files during the process')
@@ -105,6 +103,7 @@ dataset_name = dataset_config['name']
 in_channels = dataset_config['in_channels']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
+flatten = dataset_config['flatten']
 
 # %% transform config
 if use_transform == True:
@@ -119,6 +118,12 @@ dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False,
 
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
+
+
+def realignment(x):
+    if len(x.shape[1:]) == 3:
+        x = utils.hwc2chw(x)
+    return x.to(device)
 
 
 ########################### train function ###################################
@@ -136,7 +141,7 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2]
-        x_train = utils.bhwc2bchw(x_train).to(device)
+        x_train = realignment(x_train)
         output = model(x_train)
 
         model.zero_grad()
@@ -182,7 +187,7 @@ def test(model, test_data_loader, writer=None):
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2]
-        x_test = hwc2chw(x_test).to(device)
+        x_test = realignment(x_test)
         output = model(x_test)
 
         loss = criterion(output, target.long())
@@ -221,10 +226,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=1, flatten=False)
+    train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=1, flatten=flatten)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    test_data = TorchvisionDataset(dataset_testset, max_rate=1, length=1, flatten=False)
+    test_data = TorchvisionDataset(dataset_testset, max_rate=1, length=1, flatten=flatten)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []

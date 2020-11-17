@@ -224,3 +224,42 @@ class baseline_ann(torch.nn.Module):
         output = F.log_softmax(ann_l3, dim=1)
 
         return output
+
+
+class pretrained_model(torch.nn.Module):
+    def __init__(self,
+        batch_size: int,
+        in_channels: int,
+        train_bias: bool,
+    ):
+        super().__init__()
+
+        self.batch_size = batch_size
+        _ = in_channels
+
+        self.mlp1 = nn.Linear(in_features=784, out_features=500)
+        self.relu1 = nn.ReLU()
+
+        self.mlp2 = nn.Linear(in_features=500, out_features=500)
+        self.relu2 = nn.ReLU()
+
+        self.mlp3 = nn.Linear(in_features=500, out_features=10)
+
+        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
+        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
+
+    def forward(self, inputs):
+        """
+        :param inputs: [batch, input_size, t]
+        :return:
+        """
+        ann_l1 = self.relu1(self.mlp1(inputs))
+        drop_1 = self.dropout1(ann_l1)
+
+        ann_l2 = self.relu2(self.mlp2(drop_1))
+        drop_2 = self.dropout2(ann_l2)
+
+        ann_l3 = self.mlp3(drop_2)
+        output = F.log_softmax(ann_l3, dim=1)
+
+        return output

@@ -37,7 +37,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-from networks import fixedmlp_snn_networks
+from networks import fixedmlp_snn_networks as net
 import utils
 
 
@@ -154,13 +154,12 @@ class FeatureDataset(object):
 
         self.feature_extractor.eval()
         with torch.no_grad():
-            for img, target in tqdm(self.torchvision_dataset):
+            for vector, target in tqdm(self.torchvision_dataset):
                 if self.transform is not None:
-                    img = self.transform(img)
+                    vector = self.transform(vector)
 
-                img = utils.np_hwc2chw(img)
-                img = torch.from_numpy(img).unsqueeze(0).to(device)
-                self.feature_extractor(img)
+                vector = torch.from_numpy(vector).unsqueeze(0).to(device)
+                self.feature_extractor(vector)
 
                 feature = intermediate_info['feature']
                 self.data.append(feature.to(device))
@@ -312,7 +311,7 @@ if __name__ == "__main__":
     scheduler = get_scheduler(optimizer, conf)
 
     # load the feature extractor
-    feature_extractor = fixed_cnn_networks.pretrained_model(
+    feature_extractor = net.pretrained_model(
         batch_size,
         in_channels,
         train_bias,
