@@ -114,3 +114,40 @@ class TorchvisionDataset(Dataset):
             img = img.reshape(-1)
 
         return img, self.dataset[idx][1]
+
+
+class TorchvisionVideoDataset(Dataset):
+    """mnist dataset
+
+    torchvision_mnist: dataset object
+    length: number of steps of snn
+    max_rate: a scale factor. MNIST pixel value is normalized to [0,1], and them multiply with this value
+    flatten: return 28x28 image or a flattened 1d vector
+    transform: transform
+    """
+
+    def __init__(self, torchvision_mnist, max_rate=1, flatten=False, transform=None):
+        self.dataset = torchvision_mnist
+        self.transform = transform
+        self.flatten = flatten
+        self.max_rate = max_rate
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        frame = self.dataset[idx][0]    # [frame, h, w, c]
+        audio = self.dataset[idx][1]    # []
+        target = self.dataset[idx][2]   # int
+
+        if self.transform:
+            frame = self.transform(frame)
+
+        frame = np.array(frame, dtype=np.float32) * self.max_rate
+        if self.flatten == True:
+            frame = frame.reshape(-1)
+
+        return frame, target

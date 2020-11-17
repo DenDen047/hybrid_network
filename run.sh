@@ -13,11 +13,9 @@ docker run -it --rm \
     -v "$CURRENT_PATH"/torch_logs:/torch_logs \
     -w /workdir \
     ${IMAGE_NAME} \
-    /bin/bash
-    # -c "\
-    #     python cnn_for_video.py --model cnn_networks.baseline_snn --train && \
-    #     python ann_snn_cnn.py --model cnn_networks.ann1_snn7 --train && \
-    #     python ann_snn_cnn.py --model cnn_networks.ann4_snn4 --train && \
-    #     python ann_snn_cnn.py --model cnn_networks.ann6_snn2 --train && \
-    #     python ann_snn_cnn.py --model cnn_networks.baseline_ann --train \
-    # "
+    /bin/bash -c "\
+        python cnn_for_video.py \
+            --model networks.cnn_networks.baseline_snn \
+            --config_file cnn_for_video.yaml \
+            --train \
+    "

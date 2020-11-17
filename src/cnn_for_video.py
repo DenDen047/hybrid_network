@@ -20,7 +20,6 @@ import random
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets
-from torchvision import transforms, utils
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as T
@@ -35,8 +34,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import mlp_networks
-import cnn_networks
+import networks.cnn_networks
 
 
 if torch.cuda.is_available():
@@ -112,16 +110,23 @@ max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
 
 # %% transform config
+def to_normalized_float_tensor(vid):
+    return vid.permute(0, 3, 1, 2).to(torch.float32) / 255
+
+class ToFloatTensorInZeroOne(object):
+    def __call__(self, vid):
+        return to_normalized_float_tensor(vid)
+
 if use_transform == True:
-    train_tfms = torchvision.transforms.Compose([
-        T.ToFloatTensorInZeroOne(),
+    train_tfms = T.Compose([
+        ToFloatTensorInZeroOne(),
         T.Resize((128, 171)),
         T.RandomHorizontalFlip(),
         T.Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
         T.RandomCrop((112, 112))
     ])
-    test_tfms =  torchvision.transforms.Compose([
-        T.ToFloatTensorInZeroOne(),
+    test_tfms =  T.Compose([
+        ToFloatTensorInZeroOne(),
         T.Resize((128, 171)),
         T.Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
         T.CenterCrop((112, 112))
@@ -148,19 +153,13 @@ dataset_testset = eval(f'datasets.{dataset_name}')(
     train=False,
     transform=test_tfms
 )
-sys.exit(0)
 
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def add_time_dim(x):
-    img_shape = x.shape[1:]
-    if len(img_shape) == 2:
-        x = x[:, None, :, :]
-    elif len(img_shape) == 3:
-        x = x.permute(0, 3, 1, 2)
-    return x.repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0)
+def realignment(x):
+    return x.permute(0, 2, 3, 4, 1)
 
 
 ########################### train function ###################################
@@ -178,7 +177,7 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2, time_length]
-        x_train = add_time_dim(x_train).to(device)
+        x_train = realignment(x_train).to(device)
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -226,7 +225,7 @@ def test(model, test_data_loader, writer=None):
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)
         # reshape into [batch_size, dim0-2, time_length]
-        x_test = add_time_dim(x_test).to(device)
+        x_test = realignment(x_test).to(device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -272,10 +271,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False)
+    train_data = TorchvisionVideoDataset(dataset_trainset, max_rate=1, flatten=False)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    test_data = TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False)
+    test_data = TorchvisionVideoDataset(dataset_testset, max_rate=1, flatten=False)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []

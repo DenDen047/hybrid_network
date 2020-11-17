@@ -89,7 +89,7 @@ dataset_config:
   max_rate:
     1
   use_transform:
-    False
+    True
 
 # configs for saving checkpoint
 save_checkpoint:
