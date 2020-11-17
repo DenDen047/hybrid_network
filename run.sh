@@ -19,5 +19,11 @@ docker run -it --rm \
             --pretrained_model networks.fixed_mlp_networks.pretrained_model \
             --config_file fixedann_snn_mlp.yaml \
             --train \
+            --logging && \
+        python fixedann_snn_mlp.py \
+            --model networks.fixed_mlp_networks.ann2_snn1 \
+            --pretrained_model networks.fixed_mlp_networks.pretrained_model \
+            --config_file fixedann_snn_mlp.yaml \
+            --train \
             --logging \
     "
