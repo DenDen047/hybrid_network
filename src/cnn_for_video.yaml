@@ -8,7 +8,7 @@ pytorch_seed:
 hyperparameters:
   # default parameters
   length:
-    25
+    50
   batch_size:
     64
   synapse_type:
@@ -107,5 +107,5 @@ pretrained_ann_path:
   /checkpoint/best_snn_mlp_1
 
 acc_file_name:
-  'snn_mlp_acc.csv'
+  'snn_video_acc.csv'
 

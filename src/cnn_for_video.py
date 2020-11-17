@@ -23,6 +23,7 @@ from torchvision import datasets
 from torchvision import transforms, utils
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.transforms as T
 from torchsummary import summary
 
 from snn_lib.snn_layers import *
@@ -112,13 +113,41 @@ use_transform = dataset_config['use_transform']
 
 # %% transform config
 if use_transform == True:
-    rand_transform = get_rand_transform(conf['transform'])
+    train_tfms = torchvision.transforms.Compose([
+        T.ToFloatTensorInZeroOne(),
+        T.Resize((128, 171)),
+        T.RandomHorizontalFlip(),
+        T.Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
+        T.RandomCrop((112, 112))
+    ])
+    test_tfms =  torchvision.transforms.Compose([
+        T.ToFloatTensorInZeroOne(),
+        T.Resize((128, 171)),
+        T.Normalize(mean=[0.43216, 0.394666, 0.37645], std=[0.22803, 0.22145, 0.216989]),
+        T.CenterCrop((112, 112))
+    ])
 else:
-    rand_transform = None
+    train_tfms = None
+    test_tfms = None
 
 # load dataset training & test dataset
-dataset_trainset = eval(f'datasets.{dataset_name}')(root='/dataset', train=True, download=True, transform=rand_transform)
-dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False, download=True, transform=None)
+dataset_root = os.path.join('/dataset', dataset_name)
+dataset_trainset = eval(f'datasets.{dataset_name}')(
+    root=os.path.join(dataset_root, 'video_data'),
+    annotation_path=os.path.join(dataset_root, 'test_train_splits'),
+    frames_per_clip=length,
+    fold=1,
+    train=True,
+    transform=train_tfms
+)
+dataset_testset = eval(f'datasets.{dataset_name}')(
+    root=os.path.join(dataset_root, 'video_data'),
+    annotation_path=os.path.join(dataset_root, 'test_train_splits'),
+    frames_per_clip=length,
+    fold=1,
+    train=False,
+    transform=test_tfms
+)
 sys.exit(0)
 
 # acc file name
