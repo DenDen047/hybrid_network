@@ -37,7 +37,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-from networks import fixedmlp_snn_networks as net
+import networks.fixed_mlp_networks
 import utils
 
 
@@ -49,7 +49,8 @@ else:
 # arg parser
 parser = argparse.ArgumentParser(description='mlp snn')
 parser.add_argument('--model', type=str, help='model')
-parser.add_argument('--config_file', type=str, default='ann_snn_cnn.yaml',
+parser.add_argument('--pretrained_model', type=str, help='model')
+parser.add_argument('--config_file', type=str, default='fixedann_snn_mlp.yaml',
                     help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
@@ -115,6 +116,7 @@ dataset_name = dataset_config['name']
 in_channels = dataset_config['in_channels']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
+flatten = dataset_config['flatten']
 
 # %% transform config
 if use_transform == True:
@@ -198,7 +200,7 @@ acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
 def add_time_dim(x):
-    return x.repeat(1, length, 1, 1, 1).permute(0, 2, 3, 4, 1)
+    return x.repeat(1, length, 1).permute(0, 2, 1)
 
 
 ########################### train function ###################################
@@ -292,7 +294,6 @@ if __name__ == "__main__":
     model = eval(args.model)(
         batch_size,
         length,
-        in_channels,
         train_coefficients,
         train_bias,
         membrane_filter,
@@ -311,7 +312,7 @@ if __name__ == "__main__":
     scheduler = get_scheduler(optimizer, conf)
 
     # load the feature extractor
-    feature_extractor = net.pretrained_model(
+    feature_extractor = eval(args.pretrained_model)(
         batch_size,
         in_channels,
         train_bias,
@@ -321,7 +322,7 @@ if __name__ == "__main__":
 
     # prepare train dataset
     train_data = FeatureDataset(
-        TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False),
+        TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=flatten),
         feature_extractor,
         eval(f'feature_extractor.{model.feature_module}')
     )
@@ -329,7 +330,7 @@ if __name__ == "__main__":
 
     # prepare test dataset
     test_data = FeatureDataset(
-        TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=False),
+        TorchvisionDataset(dataset_testset, max_rate=1, length=length, flatten=flatten),
         feature_extractor,
         eval(f'feature_extractor.{model.feature_module}')
     )

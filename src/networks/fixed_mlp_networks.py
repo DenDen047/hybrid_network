@@ -89,7 +89,7 @@ class ann1_snn2(torch.nn.Module):
         self.length = length
         self.batch_size = batch_size
 
-        self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
+        self.feature_module = 'mlp1'
         self.sigm = nn.Sigmoid()
 
         self.train_coefficients = train_coefficients
@@ -117,7 +117,7 @@ class ann1_snn2(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        ann_out = self.sigm(self.mlp1(inputs, steady_state=True))
+        ann_out = self.sigm(inputs)
         drop_1 = self.dropout1(ann_out)
 
         axon2_out, axon2_states = self.axon2(drop_1, axon2_states)
@@ -145,10 +145,7 @@ class ann2_snn1(torch.nn.Module):
         self.length = length
         self.batch_size = batch_size
 
-        self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
-        self.relu1 = nn.ReLU()
-
-        self.mlp2 = ANN_Module(nn.Linear, in_features=500, out_features=500)
+        self.feature_module = 'mlp2'
         self.sigm = nn.Sigmoid()
 
         self.train_coefficients = train_coefficients
@@ -170,10 +167,7 @@ class ann2_snn1(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        ann_l1 = self.relu1(self.mlp1(inputs, steady_state=True))
-        drop_1 = self.dropout1(ann_l1)
-
-        ann_l2 = self.sigm(self.mlp2(drop_1, steady_state=True))
+        ann_l2 = self.sigm(inputs)
         drop_2 = self.dropout2(ann_l2)
 
         axon3_out, axon3_states = self.axon3(drop_2, axon3_states)
