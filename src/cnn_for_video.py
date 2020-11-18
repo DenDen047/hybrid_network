@@ -34,13 +34,14 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import networks.cnn_networks
+import networks.video_cnn_networks
 
 
 if torch.cuda.is_available():
-    device = torch.device('cuda:0')
+    device = torch.device('cuda')
 else:
     device = torch.device('cpu')
+print(f'Running on {device}')
 
 # arg parser
 parser = argparse.ArgumentParser(description='mlp snn')
@@ -107,9 +108,10 @@ dataset_config = conf['dataset_config']
 dataset_name = dataset_config['name']
 in_channels = dataset_config['in_channels']
 max_rate = dataset_config['max_rate']
+n_class = dataset_config['n_class']
 use_transform = dataset_config['use_transform']
 
-# %% transform config
+# %% transform configf
 def to_normalized_float_tensor(vid):
     return vid.permute(0, 3, 1, 2).to(torch.float32) / 255
 
@@ -254,6 +256,7 @@ if __name__ == "__main__":
         batch_size,
         length,
         in_channels,
+        n_class,
         train_coefficients,
         train_bias,
         membrane_filter,

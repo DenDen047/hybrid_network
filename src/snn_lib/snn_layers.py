@@ -89,8 +89,8 @@ class filter_layer(torch.nn.Module):
         # unbind along last dimension
         inputs = input_spikes.unbind(dim=-1)
         # initial state of filter
-        filter_state_s = torch.full((self.input_size,), 0.0).to(self.filter_v0.device)
-        filter_state_m = torch.full((self.input_size,), 0.0).to(self.filter_v0.device)
+        filter_state_s = torch.full((self.input_size,), 0.0, dtype=torch.float).to(self.filter_v0.device)
+        filter_state_m = torch.full((self.input_size,), 0.0, dtype=torch.float).to(self.filter_v0.device)
         filter_output_list = []
 
         for t in range(len(inputs)):
@@ -130,7 +130,7 @@ class exponential_filter_layer(torch.nn.Module):
         # initial state of filter
         filter_output_list = []
 
-        filter_state = torch.full((self.input_size,), 0.0).to(self.device)
+        filter_state = torch.full((self.input_size,), 0.0, dtype=torch.float).to(self.device)
 
         for t in range(len(inputs)):
             filter_state = filter_state * (1 - self.alpha) + self.alpha*inputs[t]
@@ -169,11 +169,11 @@ class double_exponential_filter_layer(torch.nn.Module):
         # initial state of filter
         filter_output_list = []
 
-        s = torch.full((self.input_size,), 0.0).to(self.device)
-        b = torch.full((self.input_size,), 0.0).to(self.device)
+        s = torch.full((self.input_size,), 0.0, dtype=torch.float).to(self.device)
+        b = torch.full((self.input_size,), 0.0, dtype=torch.float).to(self.device)
 
-        s_t_minus_1 = torch.full((self.input_size,), 0.0).to(self.device)
-        b_t_minus_1 = torch.full((self.input_size,), 0.0).to(self.device)
+        s_t_minus_1 = torch.full((self.input_size,), 0.0, dtype=torch.float).to(self.device)
+        b_t_minus_1 = torch.full((self.input_size,), 0.0, dtype=torch.float).to(self.device)
 
         for t in range(len(inputs)):
 
@@ -210,17 +210,17 @@ class snn_cell(torch.nn.Module):
         self.batch_size = batch_size
 
         self.weight = torch.nn.Linear(input_size, neuron_number, bias=True)
-        self.tau_m = torch.full((input_size,), tau_m)
-        self.tau_s = torch.full((input_size,), tau_s)
+        self.tau_m = torch.full((input_size,), tau_m, dtype=torch.float)
+        self.tau_s = torch.full((input_size,), tau_s, dtype=torch.float)
 
         self.sigma = torch.nn.Parameter(torch.tensor(0.4))
         self.sigma.requires_grad = False
 
         self.reset_decay = torch.exp(torch.tensor(-1.0/tau_m))
-        self.reset_decay = torch.nn.Parameter(torch.full((self.neuron_number,),self.reset_decay))
+        self.reset_decay = torch.nn.Parameter(torch.full((self.neuron_number,),self.reset_decay, dtype=torch.float))
         self.reset_decay.requires_grad = False
 
-        self.reset_v = torch.nn.Parameter(torch.full((self.neuron_number,), 1.0))
+        self.reset_v = torch.nn.Parameter(torch.full((self.neuron_number,), 1.0, dtype=torch.float))
         self.reset_v.requires_grad = False
 
         # calculate the norm factor to make max spike response to be 1
@@ -235,7 +235,7 @@ class snn_cell(torch.nn.Module):
         self.decay_s.requires_grad = train_tau_s
 
         self.decay_v = torch.exp(torch.tensor(-1/tau_m))
-        self.decay_v = torch.nn.Parameter(torch.full((self.neuron_number,),self.decay_v))
+        self.decay_v = torch.nn.Parameter(torch.full((self.neuron_number,), self.decay_v, dtype=torch.float))
         self.decay_v.requires_grad = False
 
     def forward(self, current_spike, prev_states):
@@ -350,8 +350,8 @@ class synapse_cell(torch.nn.Module):
         self.step_num = step_num
         self.batch_size = batch_size
 
-        self.tau_m = torch.full((input_size,output_size), tau_m)
-        self.tau_s = torch.full((input_size,output_size), tau_s)
+        self.tau_m = torch.full((input_size,output_size), tau_m, dtype=torch.float)
+        self.tau_s = torch.full((input_size,output_size), tau_s, dtype=torch.float)
 
         # calculate the norm factor to make max spike response to be 1
         eta = torch.tensor(tau_m / tau_s)
@@ -459,8 +459,8 @@ class dual_exp_iir_cell(torch.nn.Module):
         self.step_num = step_num
         self.batch_size = batch_size
 
-        self.tau_m = torch.full(input_shape, tau_m)
-        self.tau_s = torch.full(input_shape, tau_s)
+        self.tau_m = torch.full(input_shape, tau_m, dtype=torch.float)
+        self.tau_s = torch.full(input_shape, tau_s, dtype=torch.float)
 
         # calculate the norm factor to make max spike response to be 1
         eta = torch.tensor(tau_m / tau_s)
@@ -558,7 +558,7 @@ class first_order_low_pass_cell(torch.nn.Module):
         self.step_num = step_num
         self.batch_size = batch_size
 
-        self.tau = torch.full(input_shape, tau)
+        self.tau = torch.full(input_shape, tau, dtype=torch.float)
 
         self.alpha_1 = torch.nn.Parameter(torch.exp(-1 / self.tau))
         self.alpha_1.requires_grad = train_coefficients
@@ -640,8 +640,8 @@ class axon_cell(torch.nn.Module):
         self.step_num = step_num
         self.batch_size = batch_size
 
-        self.tau_m = torch.full(input_shape, tau_m)
-        self.tau_s = torch.full(input_shape, tau_s)
+        self.tau_m = torch.full(input_shape, tau_m, dtype=torch.float)
+        self.tau_s = torch.full(input_shape, tau_s, dtype=torch.float)
 
         # calculate the norm factor to make max spike response to be 1
         eta = torch.tensor(tau_m / tau_s)
@@ -758,20 +758,20 @@ class neuron_cell(torch.nn.Module):
             self.weight = torch.nn.Parameter(weight)
         else:
             self.weight = torch.nn.Linear(input_size, neuron_number, bias=train_bias)
-        self.tau_m = torch.full((neuron_number,), tau_m)
+        self.tau_m = torch.full((neuron_number,), tau_m, dtype=torch.float)
 
         self.sigma = torch.nn.Parameter(torch.tensor(0.4))
         self.sigma.requires_grad = False
 
         self.reset_decay = torch.exp(torch.tensor(-1.0/tau_m))
-        self.reset_decay = torch.nn.Parameter(torch.full((self.neuron_number,),self.reset_decay))
+        self.reset_decay = torch.nn.Parameter(torch.full((self.neuron_number,),self.reset_decay, dtype=torch.float))
         self.reset_decay.requires_grad = False
 
-        self.reset_v = torch.nn.Parameter(torch.full((self.neuron_number,), reset_v))
+        self.reset_v = torch.nn.Parameter(torch.full((self.neuron_number,), reset_v, dtype=torch.float))
         self.reset_v.requires_grad = False
 
         self.decay_v = torch.exp(torch.tensor(-1/tau_m))
-        self.decay_v = torch.nn.Parameter(torch.full((self.neuron_number,),self.decay_v))
+        self.decay_v = torch.nn.Parameter(torch.full((self.neuron_number,), self.decay_v, dtype=torch.float))
         self.decay_v.requires_grad = False
 
         self.membrane_filter = membrane_filter
@@ -890,20 +890,20 @@ class neuron_cell_dot_product(torch.nn.Module):
             torch.nn.init.xavier_uniform(weight)
             self.weight = torch.nn.Parameter(weight)
 
-        self.tau_m = torch.full((input_size,), tau_m)
+        self.tau_m = torch.full((input_size,), tau_m, dtype=torch.float)
 
         self.sigma = torch.nn.Parameter(torch.tensor(0.4))
         self.sigma.requires_grad = False
 
         self.reset_decay = torch.exp(torch.tensor(-1.0 / tau_m))
-        self.reset_decay = torch.nn.Parameter(torch.full((self.neuron_number,), self.reset_decay))
+        self.reset_decay = torch.nn.Parameter(torch.full((self.neuron_number,), self.reset_decay, dtype=torch.float))
         self.reset_decay.requires_grad = False
 
-        self.reset_v = torch.nn.Parameter(torch.full((self.neuron_number,), 1.0))
+        self.reset_v = torch.nn.Parameter(torch.full((self.neuron_number,), 1.0, dtype=torch.float))
         self.reset_v.requires_grad = False
 
         self.decay_v = torch.exp(torch.tensor(-1 / tau_m))
-        self.decay_v = torch.nn.Parameter(torch.full((self.neuron_number,), self.decay_v))
+        self.decay_v = torch.nn.Parameter(torch.full((self.neuron_number,), self.decay_v, dtype=torch.float))
         self.decay_v.requires_grad = False
 
         self.membrane_filter = membrane_filter
@@ -1020,14 +1020,14 @@ class conv2d_cell(torch.nn.Module):
         self.sigma.requires_grad = False
 
         self.reset_decay = torch.exp(torch.tensor(-1.0/tau_m))
-        self.reset_decay = torch.nn.Parameter(torch.full(self.output_shape,self.reset_decay))
+        self.reset_decay = torch.nn.Parameter(torch.full(self.output_shape, self.reset_decay, dtype=torch.float))
         self.reset_decay.requires_grad = False
 
-        self.reset_v = torch.nn.Parameter(torch.full(self.output_shape, 1.0))
+        self.reset_v = torch.nn.Parameter(torch.full(self.output_shape, 1.0, dtype=torch.float))
         self.reset_v.requires_grad = False
 
         self.decay_v = torch.exp(torch.tensor(-1/tau_m))
-        self.decay_v = torch.nn.Parameter(torch.full(self.output_shape,self.decay_v))
+        self.decay_v = torch.nn.Parameter(torch.full(self.output_shape, self.decay_v, dtype=torch.float))
         self.decay_v.requires_grad = False
 
         self.membrane_filter = membrane_filter

@@ -88,6 +88,8 @@ dataset_config:
     3
   max_rate:
     1
+  n_class:
+    51
   use_transform:
     True
 

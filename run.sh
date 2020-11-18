@@ -5,7 +5,7 @@ IMAGE_NAME="denden047/snn_iir"
 
 docker build -q -t ${IMAGE_NAME} "$CURRENT_PATH"/docker && \
 docker run -it --rm \
-    --gpus 1 \
+    --gpus 0 \
     -v "$CURRENT_PATH"/src:/workdir \
     -v "$CURRENT_PATH"/dataset:/dataset \
     -v "$CURRENT_PATH"/checkpoint:/checkpoint \
@@ -15,7 +15,7 @@ docker run -it --rm \
     ${IMAGE_NAME} \
     /bin/bash -c "\
         python cnn_for_video.py \
-            --model networks.cnn_networks.baseline_snn \
+            --model networks.video_cnn_networks.baseline_snn \
             --config_file cnn_for_video.yaml \
             --train \
     "
