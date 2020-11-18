@@ -23,7 +23,7 @@ import random
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets
-from torchvision import transforms, utils
+from torchvision import transforms
 import torch.nn as nn
 import torch.nn.functional as F
 from torchsummary import summary
@@ -38,6 +38,7 @@ import omegaconf
 from omegaconf import OmegaConf
 
 import networks.fixed_cnn_networks
+import utils
 
 
 if torch.cuda.is_available():
@@ -160,8 +161,12 @@ class FeatureDataset(object):
                 if self.transform is not None:
                     img = self.transform(img)
 
-                img = utils.np_hwc2chw(img)
-                img = torch.from_numpy(img).unsqueeze(0).to(device)
+                if len(img.shape) == 3:
+                    img = utils.np_hwc2chw(img)
+                img = torch.from_numpy(img)
+                if len(img.shape) == 2:
+                    img = img.unsqueeze(0)  # add channel dimension
+                img = img.unsqueeze(0).to(device)
                 self.feature_extractor(img)
 
                 feature = intermediate_info['feature']
@@ -316,8 +321,9 @@ if __name__ == "__main__":
 
     # load the feature extractor
     feature_extractor = networks.fixed_cnn_networks.pretrained_model(
+        in_channels, size_h, size_w,
         batch_size,
-        in_channels,
+        n_class,
         train_bias,
     ).to(device)
     pretrained_ann_checkpoint = torch.load(pretrained_ann_path)
