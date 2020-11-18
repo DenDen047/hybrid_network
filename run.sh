@@ -15,6 +15,16 @@ docker run -it --rm \
     ${IMAGE_NAME} \
     /bin/bash -c "\
         python fixedann_snn_cnn.py \
+            --model networks.fixed_cnn_networks.ann1_snn7 \
+            --config_file fixedann_snn_cnn.yaml \
+            --train \
+            --logging && \
+        python fixedann_snn_cnn.py \
+            --model networks.fixed_cnn_networks.ann4_snn4 \
+            --config_file fixedann_snn_cnn.yaml \
+            --train \
+            --logging && \
+        python fixedann_snn_cnn.py \
             --model networks.fixed_cnn_networks.ann6_snn2 \
             --config_file fixedann_snn_cnn.yaml \
             --train \
