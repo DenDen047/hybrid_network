@@ -382,12 +382,18 @@ class ann4_snn4(torch.nn.Module):
         self.feature_module = 'ann4'
         self.sigm = nn.Sigmoid()
 
+        c, h, w = in_channels, input_h, input_w
+        c, h, w = 32, h-2, w-2
+        c, h, w = 32, h-2, w-2
+        c, h, w = 64, h-2, w-2
+
+        c, h, w = c, h//2, w//2
         self.axon5 = dual_exp_iir_layer(
-            (64, 13, 13),
+            (c, h, w),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn5 = conv2d_layer(
-            13, 13, 64,
+            c, h, w,
             out_channels=64,
             kernel_size=3,
             stride=1, padding=0, dilation=1,
@@ -398,12 +404,13 @@ class ann4_snn4(torch.nn.Module):
             membrane_filter=self.membrane_filter
         )
 
+        c, h, w = c, h-2, w-2
         self.axon6 = dual_exp_iir_layer(
-            (64, 11, 11),
+            (c, h, w),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn6 = maxpooling2d_layer(
-            11, 11, 64,
+            c, h, w,
             kernel_size=2,
             stride=2,
             padding=0, dilation=1,
@@ -411,14 +418,13 @@ class ann4_snn4(torch.nn.Module):
             batch_size=self.batch_size
         )
 
-        self.axon7 = dual_exp_iir_layer((1600,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
-        self.snn7 = neuron_layer(1600, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+        c, h, w = c, h//2, w//2
+        n = c * h * w
+        self.axon7 = dual_exp_iir_layer((n,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn7 = neuron_layer(n, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
         self.axon8 = dual_exp_iir_layer((512,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn8 = neuron_layer(512, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        # self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        # self.dropout2 = nn.Dropout(p=0.3, inplace=False)
 
     def forward(self, inputs):
         """
@@ -478,14 +484,20 @@ class ann6_snn2(torch.nn.Module):
         self.feature_module = 'ann6'
         self.sigm = nn.Sigmoid()
 
-        self.axon7 = dual_exp_iir_layer((1600,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
-        self.snn7 = neuron_layer(1600, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+        c, h, w = in_channels, input_h, input_w
+        c, h, w = 32, h-2, w-2
+        c, h, w = 32, h-2, w-2
+        c, h, w = 64, h-2, w-2
+        c, h, w = c, h//2, w//2
+        c, h, w = c, h-2, w-2
+        c, h, w = c, h//2, w//2
+
+        n = c * h * w
+        self.axon7 = dual_exp_iir_layer((n,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn7 = neuron_layer(n, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
         self.axon8 = dual_exp_iir_layer((512,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn8 = neuron_layer(512, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        # self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        # self.dropout2 = nn.Dropout(p=0.3, inplace=False)
 
     def forward(self, inputs):
         """
