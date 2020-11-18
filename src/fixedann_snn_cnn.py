@@ -37,10 +37,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import mlp_networks
-import cnn_networks
-import fixed_cnn_networks
-import utils
+import networks.fixed_cnn_networks
 
 
 if torch.cuda.is_available():
@@ -116,6 +113,9 @@ dataset_config = conf['dataset_config']
 dataset_name = dataset_config['name']
 in_channels = dataset_config['in_channels']
 max_rate = dataset_config['max_rate']
+size_h = dataset_config['size_h']
+size_w = dataset_config['size_w']
+n_class = dataset_config['n_class']
 use_transform = dataset_config['use_transform']
 
 # %% transform config
@@ -293,9 +293,10 @@ def test(model, test_data_loader, writer=None):
 if __name__ == "__main__":
 
     model = eval(args.model)(
+        in_channels, size_h, size_w,
         batch_size,
+        n_class,
         length,
-        in_channels,
         train_coefficients,
         train_bias,
         membrane_filter,
@@ -314,7 +315,7 @@ if __name__ == "__main__":
     scheduler = get_scheduler(optimizer, conf)
 
     # load the feature extractor
-    feature_extractor = fixed_cnn_networks.pretrained_model(
+    feature_extractor = networks.fixed_cnn_networks.pretrained_model(
         batch_size,
         in_channels,
         train_bias,

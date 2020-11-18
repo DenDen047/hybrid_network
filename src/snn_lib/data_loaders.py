@@ -18,13 +18,16 @@ def get_rand_transform(transform_config):
     t1_size = transform_config['RandomResizedCrop']['size']
     t1_scale = transform_config['RandomResizedCrop']['scale']
     t1_ratio = transform_config['RandomResizedCrop']['ratio']
-    t1 = transforms.RandomResizedCrop(t1_size, scale=t1_scale, ratio=t1_ratio, interpolation=2)
+    t1 = transforms.RandomResizedCrop(t1_size, scale=tuple(t1_scale), ratio=tuple(t1_ratio), interpolation=2)
 
     t2_angle = transform_config['RandomRotation']['angle']
     t2 = transforms.RandomRotation(t2_angle, resample=False, expand=False, center=None)
     t3 = transforms.Compose([t1, t2])
 
-    rand_transform = transforms.RandomApply([t1, t2, t3], p=transform_config['RandomApply']['probability'])
+    rand_transform = transforms.RandomApply(
+        [t1, t2, t3],
+        p=transform_config['RandomApply']['probability']
+    )
 
     return rand_transform
 
