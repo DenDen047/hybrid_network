@@ -989,7 +989,7 @@ class neuron_layer_dot_product(torch.nn.Module):
         return init_states
 
 class conv2d_cell(torch.nn.Module):
-    def __init__(self, h_input, w_input, in_channels, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
+    def __init__(self, in_channels, h_input, w_input, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
                  tau_m, train_bias, membrane_filter, input_type='axon'):
         '''
         :param input_size: int
@@ -1057,7 +1057,7 @@ class conv2d_cell(torch.nn.Module):
         return spike, new_states
 
 class conv2d_layer(torch.nn.Module):
-    def __init__(self, h_input, w_input, in_channels, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
+    def __init__(self, in_channels, h_input, w_input, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
                  tau_m, train_bias, membrane_filter, input_type='axon'):
         '''
         :param input_size:
@@ -1080,7 +1080,7 @@ class conv2d_layer(torch.nn.Module):
         conv_out_h, conv_out_w = calculate_conv2d_outsize(h_input, w_input, padding, kernel_size, stride)
         self.output_shape = (out_channels, conv_out_h, conv_out_w)
 
-        self.conv2d_cell = conv2d_cell(h_input, w_input, in_channels, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
+        self.conv2d_cell = conv2d_cell(in_channels, h_input, w_input, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
                  tau_m, train_bias, membrane_filter, input_type)
 
     def forward(self, input_spikes, states):
@@ -1117,7 +1117,7 @@ class conv2d_layer(torch.nn.Module):
             yield name, param
 
 class maxpooling2d_layer(torch.nn.Module):
-    def __init__(self, h_input, w_input, in_channels, kernel_size, stride, padding, dilation, step_num, batch_size):
+    def __init__(self, in_channels, h_input, w_input, kernel_size, stride, padding, dilation, step_num, batch_size):
         '''
         2d max pooling, input should be the output of axon, it pools the axon's psp
         :param input_size:

@@ -35,13 +35,14 @@ class baseline_snn(torch.nn.Module):
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
         self.membrane_filter = membrane_filter
+        c, h, w = in_channels, 112, 112
 
         self.axon1 = dual_exp_iir_layer(
-            (in_channels, 112, 112),
+            (c, h, w),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn1 = conv2d_layer(
-            112, 112, in_channels,
+            c, h, w,
             out_channels=64,
             kernel_size=7,
             stride=1, padding=0, dilation=1,
@@ -51,13 +52,14 @@ class baseline_snn(torch.nn.Module):
             train_bias=self.train_bias,
             membrane_filter=self.membrane_filter
         )
+        c, h, w = 64, h-6, w-6
 
         self.axon2 = dual_exp_iir_layer(
-            (64, 106, 106),
+            (c, h, w),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn2 = conv2d_layer(
-            106, 106, 64,
+            c, h, w,
             out_channels=32,
             kernel_size=3,
             stride=1, padding=0, dilation=1,
@@ -67,13 +69,14 @@ class baseline_snn(torch.nn.Module):
             train_bias=self.train_bias,
             membrane_filter=self.membrane_filter
         )
+        c, h, w = 32, h-2, w-2
 
         self.axon3 = dual_exp_iir_layer(
-            (32, 104, 104),
+            (c, h, w),
             self.length, self.batch_size, tau_m, tau_s, train_coefficients
         )
         self.snn3 = conv2d_layer(
-            104, 104, 32,
+            c, h, w,
             out_channels=32,
             kernel_size=3,
             stride=1, padding=0, dilation=1,
@@ -83,9 +86,11 @@ class baseline_snn(torch.nn.Module):
             train_bias=self.train_bias,
             membrane_filter=self.membrane_filter
         )
+        c, h, w = 32, h-2, w-2
 
-        self.axon4 = dual_exp_iir_layer((32*102*102,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
-        self.snn4 = neuron_layer(32*102*102, 256, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+        n = c * h * w
+        self.axon4 = dual_exp_iir_layer((n,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn4 = neuron_layer(n, 256, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
         self.axon5 = dual_exp_iir_layer((256,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn5 = neuron_layer(256, self.n_class, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
