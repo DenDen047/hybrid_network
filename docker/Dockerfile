@@ -1,4 +1,5 @@
-FROM pytorch/pytorch:1.2-cuda10.0-cudnn7-runtime
+FROM pytorch/pytorch:1.7.0-cuda11.0-cudnn8-runtime
+
 
 RUN apt-get update && apt-get upgrade -y
 RUN pip install --upgrade pip

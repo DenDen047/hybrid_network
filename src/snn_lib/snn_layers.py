@@ -1057,7 +1057,7 @@ class conv2d_cell(torch.nn.Module):
         return spike, new_states
 
 class conv2d_layer(torch.nn.Module):
-    def __init__(self, h_input, w_input, in_channels, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
+    def __init__(self, in_channels, h_input, w_input, out_channels, kernel_size, stride, padding, dilation, step_num, batch_size,
                  tau_m, train_bias, membrane_filter, input_type='axon'):
         '''
         :param input_size:
@@ -1117,7 +1117,7 @@ class conv2d_layer(torch.nn.Module):
             yield name, param
 
 class maxpooling2d_layer(torch.nn.Module):
-    def __init__(self, h_input, w_input, in_channels, kernel_size, stride, padding, dilation, step_num, batch_size):
+    def __init__(self, in_channels, h_input, w_input, kernel_size, stride, padding, dilation, step_num, batch_size):
         '''
         2d max pooling, input should be the output of axon, it pools the axon's psp
         :param input_size:

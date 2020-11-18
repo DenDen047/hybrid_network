@@ -36,13 +36,13 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import networks.fixed_mlp_networks
+import networks.fixed_cnn_networks
 
 import utils
 
 
 if torch.cuda.is_available():
-    device = torch.device('cuda:0')
+    device = torch.device('cuda')
 else:
     device = torch.device('cpu')
 
@@ -101,6 +101,9 @@ train_bias = hyperparam_conf['train_bias']
 dataset_config = conf['dataset_config']
 dataset_name = dataset_config['name']
 in_channels = dataset_config['in_channels']
+size_h = dataset_config['size_h']
+size_w = dataset_config['size_w']
+n_class = dataset_config['n_class']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
 flatten = dataset_config['flatten']
@@ -121,7 +124,9 @@ acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
 def realignment(x):
-    if len(x.shape[1:]) == 3:
+    if len(x.shape[1:]) == 2:
+        x = x[:, None, :, :]
+    elif len(x.shape[1:]) == 3:
         x = utils.hwc2chw(x)
     return x.to(device)
 
@@ -211,8 +216,9 @@ def test(model, test_data_loader, writer=None):
 if __name__ == "__main__":
 
     model = eval(args.model)(
+        in_channels, size_h, size_w,
+        n_class,
         batch_size,
-        in_channels,
         train_bias,
     ).to(device)
 
