@@ -14,10 +14,11 @@ import time
 import sys
 import logging
 import pickle
-
-import torch
 import numpy as np
 import random
+from tqdm import tqdm
+
+import torch
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets
@@ -25,6 +26,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as T
 from torchsummary import summary
+from barbar import Bar
 
 from snn_lib.snn_layers import *
 from snn_lib.optimizers import *
@@ -191,7 +193,7 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
     model.train()
 
-    for i_batch, sample_batched in enumerate(train_data_loader):
+    for i_batch, sample_batched in enumerate(Bar(train_data_loader)):
 
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
@@ -239,7 +241,7 @@ def test(model, test_data_loader, writer=None):
 
     criterion = torch.nn.CrossEntropyLoss()
 
-    for i_batch, sample_batched in enumerate(test_data_loader):
+    for i_batch, sample_batched in Bar(enumerate(test_data_loader)):
 
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)

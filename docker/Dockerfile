@@ -19,6 +19,7 @@ RUN pip install torchsummary
 # for video processing
 RUN apt-get install -y libavformat-dev libavdevice-dev wget unrar
 RUN pip install av
+RUN pip install barbar
 
 # clearn
 RUN rm -rf /var/lib/apt/lists/*
