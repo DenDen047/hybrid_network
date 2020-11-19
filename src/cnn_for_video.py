@@ -13,6 +13,7 @@ import os
 import time
 import sys
 import logging
+import pickle
 
 import torch
 import numpy as np
@@ -139,22 +140,38 @@ else:
 
 # load dataset training & test dataset
 dataset_root = os.path.join('/dataset', dataset_name)
-dataset_trainset = eval(f'datasets.{dataset_name}')(
-    root=os.path.join(dataset_root, 'video_data'),
-    annotation_path=os.path.join(dataset_root, 'test_train_splits'),
-    frames_per_clip=length,
-    fold=1,
-    train=True,
-    transform=train_tfms
-)
-dataset_testset = eval(f'datasets.{dataset_name}')(
-    root=os.path.join(dataset_root, 'video_data'),
-    annotation_path=os.path.join(dataset_root, 'test_train_splits'),
-    frames_per_clip=length,
-    fold=1,
-    train=False,
-    transform=test_tfms
-)
+preprocessed_dataset_path = os.path.join(dataset_root, 'preprocessed_dataset.pkl')
+if os.path.exists(preprocessed_dataset_path):
+    with open(preprocessed_dataset_path, 'rb') as f:
+        logger.info(f'loading {preprocessed_dataset_path}')
+        preprocessed_dataset = pickle.load(f)
+        dataset_trainset = preprocessed_dataset['train']
+        dataset_testset = preprocessed_dataset['test']
+else:
+    dataset_trainset = eval(f'datasets.{dataset_name}')(
+        root=os.path.join(dataset_root, 'video_data'),
+        annotation_path=os.path.join(dataset_root, 'test_train_splits'),
+        frames_per_clip=length,
+        fold=1,
+        train=True,
+        transform=train_tfms
+    )
+    dataset_testset = eval(f'datasets.{dataset_name}')(
+        root=os.path.join(dataset_root, 'video_data'),
+        annotation_path=os.path.join(dataset_root, 'test_train_splits'),
+        frames_per_clip=length,
+        fold=1,
+        train=False,
+        transform=test_tfms
+    )
+
+    logger.info(f'saving {preprocessed_dataset_path}')
+    with open(preprocessed_dataset_path, 'wb') as f:
+        preprocessed_dataset = {
+            'train': dataset_trainset,
+            'test': dataset_testset,
+        }
+        pickle.dump(preprocessed_dataset, f)
 
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
