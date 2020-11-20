@@ -102,7 +102,7 @@ train_bias = hyperparam_conf['train_bias']
 train_coefficients = hyperparam_conf['train_coefficients']
 
 # %% mnist config
-dataset_config = conf['mnist_config']
+dataset_config = conf['dataset_config']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
 
@@ -228,10 +228,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = MNISTDataset(mnist_trainset, max_rate=1, length=length, flatten=True)
+    train_data = TorchvisionDataset(mnist_trainset, max_rate=1, length=length, flatten=True)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    test_data = MNISTDataset(mnist_testset, max_rate=1, length=length, flatten=True)
+    test_data = TorchvisionDataset(mnist_testset, max_rate=1, length=length, flatten=True)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []

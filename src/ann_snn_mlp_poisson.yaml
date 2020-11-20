@@ -65,7 +65,7 @@ scheduler:
 transform:
   RandomResizedCrop:
     size:
-      32
+      28
     scale:
       - 0.85
       - 1.0
