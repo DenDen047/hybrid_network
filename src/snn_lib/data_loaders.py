@@ -32,7 +32,7 @@ def get_rand_transform(transform_config):
     return rand_transform
 
 
-class MNISTDataset_Poisson_Spike(Dataset):
+class TorchvisionDataset_Poisson_Spike(Dataset):
     """mnist dataset
 
     torchvision_mnist: dataset object
