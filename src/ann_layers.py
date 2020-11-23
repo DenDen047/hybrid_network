@@ -25,4 +25,4 @@ class ANN_Module(torch.nn.Module):
             for i in range(len(inputs)):
                 output = self.ann_layer(inputs[i])
                 outputs += [output]
-        return torch.stack(outputs,dim=-1)
+        return torch.stack(outputs, dim=-1)

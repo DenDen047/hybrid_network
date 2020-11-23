@@ -34,7 +34,9 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
+import utils
 import networks.mlp_networks
+import networks.mlp_networks_poisson
 
 
 if torch.cuda.is_available():
@@ -122,6 +124,10 @@ testset = datasets.MNIST(root='/dataset', train=False, download=True, transform=
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
+def preprocess(x):
+    return utils.add_time_dim(x, length)
+
+
 ########################### train function ###################################
 def train(model, optimizer, scheduler, train_data_loader, writer=None):
     eval_image_number = 0
@@ -136,7 +142,7 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
         x_train = sample_batched[0]
         target = sample_batched[1].to(device)
-        x_train = x_train.to(device)  # [batch_size, dim0, time_length]
+        x_train = preprocess(x_train).to(device)  # [batch_size, dim0, time_length]
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -183,7 +189,7 @@ def test(model, test_data_loader, writer=None):
 
         x_test = sample_batched[0]
         target = sample_batched[1].to(device)
-        x_test = x_test.to(device)
+        x_test = preprocess(x_test).to(device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -228,10 +234,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = TorchvisionDataset_Poisson_Spike(trainset, max_rate=1, length=length, flatten=True)
+    train_data = TorchvisionDataset(trainset, max_rate=1, length=length, flatten=True)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    test_data = TorchvisionDataset_Poisson_Spike(testset, max_rate=1, length=length, flatten=True)
+    test_data = TorchvisionDataset(testset, max_rate=1, length=length, flatten=True)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []
