@@ -14,13 +14,13 @@ from ann_layers import ANN_Module
 
 
 class ReparameterizeBase(torch.nn.Module):
-    def reparameterize(self, mu, log_var):
+    def reparameterize(self, mu, ln_var):
         """
         :param mu: mean from the encoder's latent space
-        :param log_var: log variance from the encoder's latent space
+        :param ln_var: log variance from the encoder's latent space
         """
-        std = torch.exp(0.5 * log_var)  # standard deviation
-        eps = torch.randn_like(std) # `randn_like` as we need the same size
+        std = torch.exp(0.5 * ln_var)  # standard deviation
+        eps = torch.randn_like(std) # random numbers as we need the same size from a normal distribution with mean 0 and variance 1.
         sample = mu + (eps * std)   # sampling as if coming from the input space
         return sample
 
@@ -42,7 +42,7 @@ class ann1_poisson_snn2(ReparameterizeBase):
 
         self.features = 500
         self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=self.features * 2)
-        self.sigm = nn.Sigmoid()
+        self.relu = nn.ReLU()
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -53,9 +53,6 @@ class ann1_poisson_snn2(ReparameterizeBase):
 
         self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
 
     def forward(self, inputs):
         """
@@ -71,22 +68,19 @@ class ann1_poisson_snn2(ReparameterizeBase):
         snn3_states = self.snn3.create_init_states()
 
         # ann layers
-        print(inputs.shape)
-        ann_l1 = self.sigm(self.mlp1(inputs, steady_state=True))
-        ann_out = self.dropout1(ann_l1)
+        ann_out = self.relu(self.mlp1(inputs, steady_state=True))
 
         # encoding
-        ann_out = ann_out.view(self.batch_size, 2, self.features)
-        mu = ann_out[:, 0, :]
-        log_var = ann_out[:, 1, :]
-        coding_out = self.reparameterize(mu, log_var)
+        ann_out = ann_out.view(self.batch_size, 2, self.features, self.length)
+        mu = ann_out[:, 0, :, :]
+        ln_var = ann_out[:, 1, :, :]
+        coding_out = self.reparameterize(mu, ln_var)
 
         # snn layers
         axon2_out, axon2_states = self.axon2(coding_out, axon2_states)
         spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
-        drop_2 = self.dropout2(spike_l2)
 
-        axon3_out, axon3_states = self.axon3(drop_2, axon3_states)
+        axon3_out, axon3_states = self.axon3(spike_l2, axon3_states)
         spike_l3, snn3_states = self.snn3(axon3_out, snn3_states)
 
         return spike_l3
