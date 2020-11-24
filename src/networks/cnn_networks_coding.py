@@ -381,7 +381,7 @@ class ann1_coding_snn7(ReparameterizeBase):
         return spike_l8
 
 
-class ann4_snn4(torch.nn.Module):
+class ann4_coding_snn4(ReparameterizeBase):
     def __init__(self,
         batch_size: int,
         length: int,
@@ -421,7 +421,7 @@ class ann4_snn4(torch.nn.Module):
         self.ann3 = ANN_Module(
             nn.Conv2d,
             in_channels=32,
-            out_channels=64,
+            out_channels=64 * 2,
             kernel_size=3,
             bias=self.train_bias
         )
@@ -431,7 +431,7 @@ class ann4_snn4(torch.nn.Module):
             kernel_size=2,
             stride=2
         )
-        self.sigm = nn.Sigmoid()
+        self.relu = nn.ReLU()
 
         self.axon5 = dual_exp_iir_layer(
             (64, 13, 13),
@@ -468,9 +468,6 @@ class ann4_snn4(torch.nn.Module):
         self.axon8 = dual_exp_iir_layer((512,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn8 = neuron_layer(512, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
-        # self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        # self.dropout2 = nn.Dropout(p=0.3, inplace=False)
-
     def forward(self, inputs):
         """
         :param inputs: [batch, input_size, t]
@@ -485,12 +482,17 @@ class ann4_snn4(torch.nn.Module):
         axon8_states = self.axon8.create_init_states()
         snn8_states = self.snn8.create_init_states()
 
+        # ann
         ann1_out = F.relu(self.ann1(inputs, steady_state=True))
         ann2_out = F.relu(self.ann2(ann1_out, steady_state=True))
         ann3_out = F.relu(self.ann3(ann2_out, steady_state=True))
-        ann4_out = self.ann4(ann3_out, steady_state=True)
+        ann_out = F.relu(self.ann4(ann3_out, steady_state=True))
 
-        axon5_out, axon5_states = self.axon5(self.sigm(ann4_out), axon5_states)
+        # encoding
+        encoding_out = self.coding(ann_out)
+
+        # snn
+        axon5_out, axon5_states = self.axon5(encoding_out, axon5_states)
         spike_l5, snn5_states = self.snn5(axon5_out, snn5_states)
 
         axon6_out, axon6_states = self.axon6(spike_l5, axon6_states)
@@ -506,7 +508,7 @@ class ann4_snn4(torch.nn.Module):
         return spike_l8
 
 
-class ann6_snn2(torch.nn.Module):
+class ann6_snn2(ReparameterizeBase):
     def __init__(self,
         batch_size: int,
         length: int,
@@ -560,7 +562,7 @@ class ann6_snn2(torch.nn.Module):
         self.ann5 = ANN_Module(
             nn.Conv2d,
             in_channels=64,
-            out_channels=64,
+            out_channels=64 * 2,
             kernel_size=3,
             bias=self.train_bias
         )
@@ -570,16 +572,13 @@ class ann6_snn2(torch.nn.Module):
             kernel_size=2,
             stride=2
         )
-        self.sigm = nn.Sigmoid()
+        self.relu = nn.ReLU()
 
         self.axon7 = dual_exp_iir_layer((1600,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn7 = neuron_layer(1600, 512, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
         self.axon8 = dual_exp_iir_layer((512,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn8 = neuron_layer(512, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        # self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        # self.dropout2 = nn.Dropout(p=0.3, inplace=False)
 
     def forward(self, inputs):
         """
@@ -592,14 +591,19 @@ class ann6_snn2(torch.nn.Module):
         axon8_states = self.axon8.create_init_states()
         snn8_states = self.snn8.create_init_states()
 
+        # ann
         ann1_out = F.relu(self.ann1(inputs, steady_state=True))
         ann2_out = F.relu(self.ann2(ann1_out, steady_state=True))
         ann3_out = F.relu(self.ann3(ann2_out, steady_state=True))
         ann4_out = self.ann4(ann3_out, steady_state=True)
         ann5_out = F.relu(self.ann5(ann4_out, steady_state=True))
-        ann6_out = self.ann6(ann5_out, steady_state=True)
+        ann_out = F.relu(self.ann6(ann5_out, steady_state=True))
 
-        flatten_spike_l6 = torch.flatten(self.sigm(ann6_out), start_dim=1, end_dim=-2)
+        # encoding
+        encoding_out = self.coding(ann_out)
+
+        # snn
+        flatten_spike_l6 = torch.flatten(encoding_out, start_dim=1, end_dim=-2)
         axon7_out, axon7_states = self.axon7(flatten_spike_l6, axon7_states)
         spike_l7, snn7_states = self.snn7(axon7_out, snn7_states)
 
@@ -698,78 +702,3 @@ class baseline_ann(torch.nn.Module):
 
         return output
 
-
-class pretrained_model(torch.nn.Module):
-    def __init__(self,
-        batch_size: int,
-        in_channels: int,
-        train_bias: bool,
-    ):
-        super().__init__()
-
-        self.batch_size = batch_size
-        self.in_channels = in_channels
-
-        self.train_bias = train_bias
-
-        self.ann1 = nn.Conv2d(
-            in_channels=self.in_channels,
-            out_channels=32,
-            kernel_size=3,
-            bias=self.train_bias
-        )
-
-        self.ann2 = nn.Conv2d(
-            in_channels=32,
-            out_channels=32,
-            kernel_size=3,
-            bias=self.train_bias
-        )
-
-        self.ann3 = nn.Conv2d(
-            in_channels=32,
-            out_channels=64,
-            kernel_size=3,
-            bias=self.train_bias
-        )
-
-        self.ann4 = nn.MaxPool2d(
-            kernel_size=2,
-            stride=2
-        )
-
-        self.ann5 = nn.Conv2d(
-            in_channels=64,
-            out_channels=64,
-            kernel_size=3,
-            bias=self.train_bias
-        )
-
-        self.ann6 = nn.MaxPool2d(
-            kernel_size=2,
-            stride=2
-        )
-
-        self.mlp7 = nn.Linear(in_features=1600, out_features=512)
-
-        self.mlp8 = nn.Linear(in_features=512, out_features=10)
-
-    def forward(self, inputs):
-        """
-        :param inputs: [batch, input_size, t]
-        :return:
-        """
-
-        ann1_out = F.relu(self.ann1(inputs))
-        ann2_out = F.relu(self.ann2(ann1_out))
-        ann3_out = F.relu(self.ann3(ann2_out))
-        ann4_out = self.ann4(ann3_out)
-        ann5_out = F.relu(self.ann5(ann4_out))
-        ann6_out = self.ann6(ann5_out)
-
-        flatten_ann6_out = torch.flatten(ann6_out, start_dim=1)
-        mlp7_out = F.relu(self.mlp7(flatten_ann6_out))
-        mlp8_out = self.mlp8(mlp7_out)
-        output = F.log_softmax(mlp8_out, dim=1)
-
-        return output
