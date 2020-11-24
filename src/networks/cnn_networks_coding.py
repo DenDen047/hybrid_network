@@ -508,7 +508,7 @@ class ann4_coding_snn4(ReparameterizeBase):
         return spike_l8
 
 
-class ann6_snn2(ReparameterizeBase):
+class ann6_coding_snn2(ReparameterizeBase):
     def __init__(self,
         batch_size: int,
         length: int,
