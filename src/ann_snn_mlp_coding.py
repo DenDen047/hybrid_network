@@ -73,6 +73,7 @@ if args.config_file is None:
     logger.info('No config file provided, use default config file')
 else:
     logger.info(f'Config file provided: {args.config_file}')
+    logger.info(args)
 
 conf = OmegaConf.load(args.config_file)
 

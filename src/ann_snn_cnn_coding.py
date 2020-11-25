@@ -178,6 +178,11 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
     acc = correct_total / eval_image_number
 
+    # clean up
+    del x_train
+    del target
+    torch.cuda.empty_cache()
+
     return acc, loss
 
 
@@ -218,6 +223,7 @@ def test(model, test_data_loader, writer=None):
     # clean up
     del target
     del x_test
+    torch.cuda.empty_cache()
 
     return acc, loss
 
@@ -261,6 +267,7 @@ if __name__ == "__main__":
 
             epoch_time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
+            # train model
             model.train()
             train_acc, train_loss = train(model, optimizer, scheduler, train_dataloader, writer=None)
             train_acc_list.append(train_acc)
