@@ -36,7 +36,7 @@ from omegaconf import OmegaConf
 
 import utils
 import networks.mlp_networks
-import networks.mlp_networks_poisson
+import networks.mlp_networks_coding
 
 
 if torch.cuda.is_available():

@@ -95,6 +95,58 @@ class baseline_snn(torch.nn.Module):
         return spike_l3
 
 
+class baseline_snn_direct_input(torch.nn.Module):
+    def __init__(self,
+        batch_size: int,
+        length: int,
+        train_coefficients: bool,
+        train_bias: bool,
+        membrane_filter: bool,
+        tau_m: int,
+        tau_s: int,
+    ):
+        super().__init__()
+
+        self.length = length
+        self.batch_size = batch_size
+
+        self.train_coefficients = train_coefficients
+        self.train_bias = train_bias
+        self.membrane_filter = membrane_filter
+
+        self.snn1 = neuron_layer(784, 500, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+
+        self.axon2 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn2 = neuron_layer(500, 500, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+
+        self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
+        self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
+
+    def forward(self, inputs):
+        """
+        :param inputs: [batch, input_size, t]
+        :return:
+        """
+
+        snn1_states = self.snn1.create_init_states()
+
+        axon2_states = self.axon2.create_init_states()
+        snn2_states = self.snn2.create_init_states()
+
+        axon3_states = self.axon3.create_init_states()
+        snn3_states = self.snn3.create_init_states()
+
+        spike_l1, snn1_states = self.snn1(inputs, snn1_states)
+
+        axon2_out, axon2_states = self.axon2(spike_l1, axon2_states)
+        spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
+
+        axon3_out, axon3_states = self.axon3(spike_l2, axon3_states)
+        spike_l3, snn3_states = self.snn3(axon3_out, snn3_states)
+
+        return spike_l3
+
+
 class ann1_poisson_snn2(ReparameterizeBase):
     def __init__(self,
         batch_size: int,
