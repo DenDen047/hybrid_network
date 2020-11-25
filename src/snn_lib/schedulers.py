@@ -34,10 +34,14 @@ def get_scheduler(optimizer, conf):
         base_lr = scheduler_conf[scheduler_choice]['base_lr']
         max_lr = scheduler_conf[scheduler_choice]['max_lr']
         step_size_up = scheduler_conf[scheduler_choice]['step_size_up']
-        print('scheduler:', scheduler_conf['scheduler_choice'], 'base_lr:', base_lr, 
-        'max_lr:', max_lr, 'step_size_up:', step_size_up)
+        print(
+            'scheduler:', scheduler_conf['scheduler_choice'],
+            'base_lr:', base_lr,
+            'max_lr:', max_lr,
+            'step_size_up:', step_size_up
+        )
         return torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr, max_lr, step_size_up)
-    
+
     elif scheduler_choice == 'none':
         return None
     else:

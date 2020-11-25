@@ -38,7 +38,7 @@ import networks.cnn_networks_coding
 
 
 if torch.cuda.is_available():
-    device = torch.device('cuda:0')
+    device = torch.device('cuda')
 else:
     device = torch.device('cpu')
 
@@ -215,6 +215,10 @@ def test(model, test_data_loader, writer=None):
 
     acc = correct_total / eval_image_number
 
+    # clean up
+    del target
+    del x_test
+
     return acc, loss
 
 
@@ -238,7 +242,6 @@ if __name__ == "__main__":
     params = list(model.parameters())
 
     optimizer = get_optimizer(params, conf)
-
     scheduler = get_scheduler(optimizer, conf)
 
     train_data = TorchvisionDataset(dataset_trainset, max_rate=1, length=length, flatten=False)
