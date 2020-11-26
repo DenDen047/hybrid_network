@@ -92,7 +92,7 @@ class TorchvisionDataset(Dataset):
     transform: transform
     """
 
-    def __init__(self, torchvision_mnist, length, max_rate=1, flatten=False, transform=None):
+    def __init__(self, torchvision_mnist, length=None, max_rate=1, flatten=False, transform=None):
         self.dataset = torchvision_mnist
         self.transform = transform
         self.flatten = flatten

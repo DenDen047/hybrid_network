@@ -1,5 +1,6 @@
 import os, sys
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -10,6 +11,14 @@ from snn_lib.data_loaders import *
 import snn_lib.utilities
 
 from ann_layers import ANN_Module
+
+
+def expand_along_time(x, length: int):
+    batch_size, n_feature = x.size()
+    x = torch.unsqueeze(x, -1) # add time dimension
+    x = x.repeat(1, 1, length)  # note: you should NOT use `torch.expand`(https://qiita.com/shinochin/items/c76616f8064f5710c895)
+
+    return x
 
 
 class baseline_snn(torch.nn.Module):
@@ -89,7 +98,7 @@ class ann1_snn2(torch.nn.Module):
         self.length = length
         self.batch_size = batch_size
 
-        self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
+        self.mlp1 = nn.Linear(in_features=784, out_features=500)
         self.sigm = nn.Sigmoid()
 
         self.train_coefficients = train_coefficients
@@ -102,29 +111,27 @@ class ann1_snn2(torch.nn.Module):
         self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
-        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
-
     def forward(self, inputs):
         """
         :param inputs: [batch, input_size, t]
         :return:
         """
-
+        # preparing
         axon2_states = self.axon2.create_init_states()
         snn2_states = self.snn2.create_init_states()
-
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        ann_out = self.sigm(self.mlp1(inputs, steady_state=True))
-        drop_1 = self.dropout1(ann_out)
+        # ann
+        ann_out = self.sigm(self.mlp1(inputs))
 
-        axon2_out, axon2_states = self.axon2(drop_1, axon2_states)
+        # converting
+        coding_out = expand_along_time(ann_out, length=self.length)
+
+        # snn
+        axon2_out, axon2_states = self.axon2(coding_out, axon2_states)
         spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
-        drop_2 = self.dropout2(spike_l2)
-
-        axon3_out, axon3_states = self.axon3(drop_2, axon3_states)
+        axon3_out, axon3_states = self.axon3(spike_l2, axon3_states)
         spike_l3, snn3_states = self.snn3(axon3_out, snn3_states)
 
         return spike_l3

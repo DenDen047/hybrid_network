@@ -134,9 +134,8 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(train_data_loader):
 
-        x_train = sample_batched[0]
+        x_train = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        x_train = x_train.repeat(length, 1, 1).permute(1, 2, 0).to(device)  # [batch_size, dim0, time_length]
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -181,9 +180,8 @@ def test(model, test_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(test_data_loader):
 
-        x_test = sample_batched[0]
+        x_test = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        x_test = x_test.repeat(length, 1, 1).permute(1, 2, 0).to(device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -207,6 +205,8 @@ def test(model, test_data_loader, writer=None):
 
 
 if __name__ == "__main__":
+
+    logger.info(args)
 
     model = eval(args.model)(
         batch_size,
