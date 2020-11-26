@@ -34,7 +34,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import mlp_networks
+import networks.mlp_networks
 import cnn_networks
 
 
@@ -46,8 +46,7 @@ else:
 # arg parser
 parser = argparse.ArgumentParser(description='mlp snn')
 parser.add_argument('--model', type=str, help='model')
-parser.add_argument('--config_file', type=str, default='snn_mlp_1.yaml',
-                    help='path to configuration file')
+parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
 parser.add_argument('--logging', action='store_true', default=True, help='if true, output the all image/pdf files during the process')
@@ -229,10 +228,10 @@ if __name__ == "__main__":
 
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = MNISTDataset(mnist_trainset, max_rate=1, length=length, flatten=True)
+    train_data = TorchvisionDataset(mnist_trainset, max_rate=1, length=length, flatten=True)
     train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
-    test_data = MNISTDataset(mnist_testset, max_rate=1, length=length, flatten=True)
+    test_data = TorchvisionDataset(mnist_testset, max_rate=1, length=length, flatten=True)
     test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
 
     train_acc_list = []
