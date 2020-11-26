@@ -15,7 +15,7 @@ docker run -it --rm \
     ${IMAGE_NAME} \
     /bin/bash -c "\
         python ann_snn_mlp.py \
-            --model networks.mlp_networks.ann1_snn2 \
+            --model networks.mlp_networks.baseline_ann \
             --config_file ann_snn_mlp.yaml \
             --train \
             --logging \
