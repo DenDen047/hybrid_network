@@ -1,6 +1,6 @@
 
 experiment_name:
-  ann_snn_cnn
+  ann_snn_cnn_coding
 
 pytorch_seed:
   2
