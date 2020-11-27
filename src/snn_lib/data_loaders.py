@@ -83,7 +83,7 @@ class TorchvisionDataset_Poisson_Spike(Dataset):
 
 
 class TorchvisionDataset(Dataset):
-    """mnist dataset
+    """torchvision dataset
 
     torchvision_mnist: dataset object
     length: number of steps of snn
@@ -92,12 +92,21 @@ class TorchvisionDataset(Dataset):
     transform: transform
     """
 
-    def __init__(self, torchvision_mnist, length=None, max_rate=1, flatten=False, transform=None):
+    def __init__(
+        self,
+        torchvision_mnist,
+        length=None,
+        max_rate=1,
+        flatten=False,
+        image_mode: str = 'chw',
+        transform=None
+    ):
         self.dataset = torchvision_mnist
         self.transform = transform
         self.flatten = flatten
         self.length = length
         self.max_rate = max_rate
+        self.image_mode = image_mode
 
     def __len__(self):
         return len(self.dataset)
@@ -113,6 +122,12 @@ class TorchvisionDataset(Dataset):
         img = np.array(self.dataset[idx][0], dtype=np.float32) / 255.0 * self.max_rate
         shape = img.shape
         img_spike = None
+
+        if self.image_mode == 'chw':
+            img = np.transpose(img, (2, 0, 1))
+        else:
+            raise f'image_mode does not support {self.image_mode}'
+
         if self.flatten == True:
             img = img.reshape(-1)
 

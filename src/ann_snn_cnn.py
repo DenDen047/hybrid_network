@@ -34,8 +34,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import mlp_networks
-import cnn_networks
+import networks.cnn_networks
 
 
 if torch.cuda.is_available():
@@ -44,10 +43,9 @@ else:
     device = torch.device('cpu')
 
 # arg parser
-parser = argparse.ArgumentParser(description='mlp snn')
+parser = argparse.ArgumentParser(description='ann_snn_cnn')
 parser.add_argument('--model', type=str, help='model')
-parser.add_argument('--config_file', type=str, default='ann_snn_cnn.yaml',
-                    help='path to configuration file')
+parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
 parser.add_argument('--logging', action='store_true', default=True, help='if true, output the all image/pdf files during the process')
@@ -74,7 +72,6 @@ else:
     logger.info(f'Config file provided: {args.config_file}')
 
 conf = OmegaConf.load(args.config_file)
-logger.debug(conf)
 
 torch.manual_seed(conf['pytorch_seed'])
 np.random.seed(conf['pytorch_seed'])
@@ -124,15 +121,6 @@ dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False,
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def add_time_dim(x):
-    img_shape = x.shape[1:]
-    if len(img_shape) == 2:
-        x = x[:, None, :, :]
-    elif len(img_shape) == 3:
-        x = x.permute(0, 3, 1, 2)
-    return x.repeat(length, 1, 1, 1, 1).permute(1, 2, 3, 4, 0)
-
-
 ########################### train function ###################################
 def train(model, optimizer, scheduler, train_data_loader, writer=None):
     eval_image_number = 0
@@ -145,10 +133,8 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(train_data_loader):
 
-        x_train = sample_batched[0]
+        x_train = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2, time_length]
-        x_train = add_time_dim(x_train).to(device)
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -193,10 +179,8 @@ def test(model, test_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(test_data_loader):
 
-        x_test = sample_batched[0]
+        x_test = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2, time_length]
-        x_test = add_time_dim(x_test).to(device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -220,6 +204,8 @@ def test(model, test_data_loader, writer=None):
 
 
 if __name__ == "__main__":
+    logger.debug(conf)
+    logger.debug(args)
 
     model = eval(args.model)(
         batch_size,

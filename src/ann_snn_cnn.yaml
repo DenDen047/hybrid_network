@@ -10,7 +10,7 @@ hyperparameters:
   length:
     25
   batch_size:
-    64
+    32
   synapse_type:
     'dual_exp'
   epoch:
@@ -101,11 +101,11 @@ checkpoint_base_path:
 
 # the checkpoint used for test
 test_checkpoint_path:
-  /checkpoint/pretrained_snn_mlp_1
+  /checkpoint/pretrained_ann_snn_cnn
 
 pretrained_ann_path:
-  /checkpoint/best_snn_mlp_1
+  /checkpoint/best_ann_snn_cnn
 
 acc_file_name:
-  'snn_mlp_acc.csv'
+  'ann_snn_cnn-accuracy.csv'
 

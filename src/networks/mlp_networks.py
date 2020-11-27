@@ -151,7 +151,7 @@ class ann2_snn1(torch.nn.Module):
         self.batch_size = batch_size
 
         self.mlp1 = nn.Linear(in_features=784, out_features=500)
-        self.relu1 = nn.ReLU()
+        self.act1 = nn.ReLU()
 
         self.mlp2 = nn.Linear(in_features=500, out_features=500)
         self.sigm = nn.Sigmoid()
@@ -173,7 +173,7 @@ class ann2_snn1(torch.nn.Module):
         snn3_states = self.snn3.create_init_states()
 
         # ann
-        ann_l1 = self.relu1(self.mlp1(inputs))
+        ann_l1 = self.act1(self.mlp1(inputs))
         ann_out = self.sigm(self.mlp2(ann_l1))
 
         # converting
@@ -201,10 +201,10 @@ class baseline_ann(torch.nn.Module):
         self.batch_size = batch_size
 
         self.mlp1 = nn.Linear(in_features=784, out_features=500)
-        self.relu1 = nn.ReLU()
+        self.act1 = nn.ReLU()
 
         self.mlp2 = nn.Linear(in_features=500, out_features=500)
-        self.relu2 = nn.ReLU()
+        self.act2 = nn.ReLU()
 
         self.mlp3 = nn.Linear(in_features=500, out_features=10)
 
@@ -214,8 +214,8 @@ class baseline_ann(torch.nn.Module):
         :return:
         """
         # ann
-        ann_l1 = self.relu1(self.mlp1(inputs))
-        ann_l2 = self.relu2(self.mlp2(ann_l1))
+        ann_l1 = self.act1(self.mlp1(inputs))
+        ann_l2 = self.act2(self.mlp2(ann_l1))
         ann_l3 = self.mlp3(ann_l2)
         ann_out = F.log_softmax(ann_l3, dim=1)
 

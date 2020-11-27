@@ -206,6 +206,7 @@ def test(model, test_data_loader, writer=None):
 
 if __name__ == "__main__":
 
+    logger.info(conf)
     logger.info(args)
 
     model = eval(args.model)(
