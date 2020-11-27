@@ -113,6 +113,7 @@ train_coefficients = hyperparam_conf['train_coefficients']
 # %% dataset config
 dataset_config = conf['dataset_config']
 dataset_name = dataset_config['name']
+n_class = dataset_config['n_class']
 in_channels = dataset_config['in_channels']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
@@ -163,7 +164,7 @@ class FeatureDataset(object):
                 vector = torch.from_numpy(vector).unsqueeze(0).to(device)
                 self.feature_extractor(vector)
 
-                feature = intermediate_info['feature']
+                feature = torch.squeeze(intermediate_info['feature'])
                 self.data.append(feature.to(device))
                 self.targets.append(target)
 
@@ -199,10 +200,6 @@ dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False,
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def add_time_dim(x):
-    return x.repeat(1, length, 1).permute(0, 2, 1)
-
-
 ########################### train function ###################################
 def train(model, optimizer, scheduler, train_data_loader, writer=None):
     eval_image_number = 0
@@ -215,10 +212,8 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(train_data_loader):
 
-        x_train = sample_batched[0]
+        x_train = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2, time_length]
-        x_train = add_time_dim(x_train).to(device)
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -263,10 +258,8 @@ def test(model, test_data_loader, writer=None):
     with torch.no_grad():
         for i_batch, sample_batched in enumerate(test_data_loader):
 
-            x_test = sample_batched[0]
+            x_test = sample_batched[0].to(device)
             target = sample_batched[1].to(device)
-            # reshape into [batch_size, dim0-2, time_length]
-            x_test = add_time_dim(x_test).to(device)
             out_spike = model(x_test)
 
             spike_count = torch.sum(out_spike, dim=2)
@@ -313,8 +306,9 @@ if __name__ == "__main__":
 
     # load the feature extractor
     feature_extractor = eval(args.pretrained_model)(
+        (in_channels,),
+        n_class,
         batch_size,
-        in_channels,
         train_bias,
     ).to(device)
     pretrained_ann_checkpoint = torch.load(pretrained_ann_path)
