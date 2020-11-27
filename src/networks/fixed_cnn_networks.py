@@ -10,6 +10,8 @@ from snn_lib.schedulers import *
 from snn_lib.data_loaders import *
 import snn_lib.utilities
 
+from typing import Any, Callable, Optional, Tuple
+
 from ann_layers import ANN_Module
 
 
@@ -599,15 +601,15 @@ class baseline_ann(torch.nn.Module):
         :return:
         """
 
-        ann1_out = F.relu(self.ann1(inputs, steady_state=True))
-        ann2_out = F.relu(self.ann2(ann1_out, steady_state=True))
-        ann3_out = F.relu(self.ann3(ann2_out, steady_state=True))
+        ann1_out = self.act1(self.ann1(inputs, steady_state=True))
+        ann2_out = self.act2(self.ann2(ann1_out, steady_state=True))
+        ann3_out = self.act3(self.ann3(ann2_out, steady_state=True))
         ann4_out = self.ann4(ann3_out, steady_state=True)
-        ann5_out = F.relu(self.ann5(ann4_out, steady_state=True))
+        ann5_out = self.act5(self.ann5(ann4_out, steady_state=True))
         ann6_out = self.ann6(ann5_out, steady_state=True)
 
         flatten_ann6_out = torch.flatten(ann6_out, start_dim=1, end_dim=-2)
-        mlp7_out = F.relu(self.mlp7(flatten_ann6_out, steady_state=True))
+        mlp7_out = self.act7(self.mlp7(flatten_ann6_out, steady_state=True))
         mlp8_out = self.mlp8(mlp7_out, steady_state=True)
         output = F.log_softmax(mlp8_out, dim=1)
 
@@ -616,29 +618,27 @@ class baseline_ann(torch.nn.Module):
 
 class pretrained_model(torch.nn.Module):
     def __init__(self,
-        in_channels: int, input_h: int, input_w: int,
-        batch_size: int,
+        input_shape: Tuple[int],
         n_class: int,
+        batch_size: int,
         train_bias: bool,
     ):
         super().__init__()
 
-        self.in_channels = in_channels
+        self.in_channels, self.input_h, self.input_w = input_shape
         self.n_class = n_class
-        self.input_h = input_h
-        self.input_w = input_w
         self.batch_size = batch_size
-        self.in_channels = in_channels
 
         self.train_bias = train_bias
 
-        c, h, w = in_channels, input_h, input_w
+        c, h, w = self.in_channels, self.input_h, self.input_w
         self.ann1 = nn.Conv2d(
             in_channels=c,
             out_channels=32,
             kernel_size=3,
             bias=self.train_bias
         )
+        self.act1 = nn.ReLU()
 
         c, h, w = 32, h-2, w-2
         self.ann2 = nn.Conv2d(
@@ -647,6 +647,7 @@ class pretrained_model(torch.nn.Module):
             kernel_size=3,
             bias=self.train_bias
         )
+        self.act2 = nn.ReLU()
 
         c, h, w = 32, h-2, w-2
         self.ann3 = nn.Conv2d(
@@ -655,6 +656,7 @@ class pretrained_model(torch.nn.Module):
             kernel_size=3,
             bias=self.train_bias
         )
+        self.act3 = nn.ReLU()
 
         c, h, w = 64, h-2, w-2
         self.ann4 = nn.MaxPool2d(
@@ -669,6 +671,7 @@ class pretrained_model(torch.nn.Module):
             kernel_size=3,
             bias=self.train_bias
         )
+        self.act5 = nn.ReLU()
 
         c, h, w = 64, h-2, w-2
         self.ann6 = nn.MaxPool2d(
@@ -679,7 +682,7 @@ class pretrained_model(torch.nn.Module):
         c, h, w = 64, h//2, w//2
         n = c * h * w
         self.mlp7 = nn.Linear(in_features=n, out_features=512)
-
+        self.act7 = nn.ReLU()
         self.mlp8 = nn.Linear(in_features=512, out_features=n_class)
 
     def forward(self, inputs):
@@ -688,15 +691,15 @@ class pretrained_model(torch.nn.Module):
         :return:
         """
 
-        ann1_out = F.relu(self.ann1(inputs))
-        ann2_out = F.relu(self.ann2(ann1_out))
-        ann3_out = F.relu(self.ann3(ann2_out))
+        ann1_out = self.act1(self.ann1(inputs))
+        ann2_out = self.act2(self.ann2(ann1_out))
+        ann3_out = self.act3(self.ann3(ann2_out))
         ann4_out = self.ann4(ann3_out)
-        ann5_out = F.relu(self.ann5(ann4_out))
+        ann5_out = self.act5(self.ann5(ann4_out))
         ann6_out = self.ann6(ann5_out)
 
         flatten_ann6_out = torch.flatten(ann6_out, start_dim=1)
-        mlp7_out = F.relu(self.mlp7(flatten_ann6_out))
+        mlp7_out = self.act7(self.mlp7(flatten_ann6_out))
         mlp8_out = self.mlp8(mlp7_out)
         output = F.log_softmax(mlp8_out, dim=1)
 
