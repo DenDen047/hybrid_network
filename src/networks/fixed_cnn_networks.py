@@ -12,6 +12,8 @@ import snn_lib.utilities
 
 from typing import Any, Callable, Optional, Tuple
 
+from . import utils
+
 from ann_layers import ANN_Module
 
 
@@ -315,7 +317,7 @@ class ann1_snn7(torch.nn.Module):
         :param inputs: [batch, input_size, t]
         :return:
         """
-
+        # preparing
         axon2_states = self.axon2.create_init_states()
         snn2_states = self.snn2.create_init_states()
         axon3_states = self.axon3.create_init_states()
@@ -329,9 +331,14 @@ class ann1_snn7(torch.nn.Module):
         axon8_states = self.axon8.create_init_states()
         snn8_states = self.snn8.create_init_states()
 
-        ann1_out = self.sigm(inputs)
+        # ann
+        ann_out = self.sigm(inputs)
 
-        axon2_out, axon2_states = self.axon2(ann1_out, axon2_states)
+        # converting
+        coding_out = utils.expand_along_time(ann_out, length=self.length)
+
+        # snn
+        axon2_out, axon2_states = self.axon2(coding_out, axon2_states)
         spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
 
         axon3_out, axon3_states = self.axon3(spike_l2, axon3_states)
@@ -433,7 +440,7 @@ class ann4_snn4(torch.nn.Module):
         :param inputs: [batch, input_size, t]
         :return:
         """
-
+        # preparing
         axon5_states = self.axon5.create_init_states()
         snn5_states = self.snn5.create_init_states()
         axon6_states = self.axon6.create_init_states()
@@ -442,7 +449,14 @@ class ann4_snn4(torch.nn.Module):
         axon8_states = self.axon8.create_init_states()
         snn8_states = self.snn8.create_init_states()
 
-        axon5_out, axon5_states = self.axon5(self.sigm(inputs), axon5_states)
+        # ann
+        ann_out = self.sigm(inputs)
+
+        # converting
+        coding_out = utils.expand_along_time(ann_out, length=self.length)
+
+        # snn
+        axon5_out, axon5_states = self.axon5(coding_out, axon5_states)
         spike_l5, snn5_states = self.snn5(axon5_out, snn5_states)
 
         axon6_out, axon6_states = self.axon6(spike_l5, axon6_states)
@@ -506,13 +520,20 @@ class ann6_snn2(torch.nn.Module):
         :param inputs: [batch, input_size, t]
         :return:
         """
-
+        # preparing
         axon7_states = self.axon7.create_init_states()
         snn7_states = self.snn7.create_init_states()
         axon8_states = self.axon8.create_init_states()
         snn8_states = self.snn8.create_init_states()
 
-        flatten_spike_l6 = torch.flatten(self.sigm(inputs), start_dim=1, end_dim=-2)
+        # ann
+        ann_out = self.sigm(inputs)
+
+        # converting
+        coding_out = utils.expand_along_time(ann_out, length=self.length)
+
+        # snn
+        flatten_spike_l6 = torch.flatten(coding_out, start_dim=1, end_dim=-2)
         axon7_out, axon7_states = self.axon7(flatten_spike_l6, axon7_states)
         spike_l7, snn7_states = self.snn7(axon7_out, snn7_states)
 
