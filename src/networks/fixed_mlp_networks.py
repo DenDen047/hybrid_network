@@ -9,6 +9,8 @@ from snn_lib.schedulers import *
 from snn_lib.data_loaders import *
 import snn_lib.utilities
 
+from typing import Any, Callable, Optional, Tuple
+
 from ann_layers import ANN_Module
 
 
@@ -39,9 +41,6 @@ class baseline_snn(torch.nn.Module):
 
         self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
-
-        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
 
     def forward(self, inputs):
         """
@@ -102,9 +101,6 @@ class ann1_snn2(torch.nn.Module):
         self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
-        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
-
     def forward(self, inputs):
         """
         :param inputs: [batch, input_size, t]
@@ -155,9 +151,6 @@ class ann2_snn1(torch.nn.Module):
         self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
 
-        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
-
     def forward(self, inputs):
         """
         :param inputs: [batch, input_size, t]
@@ -199,9 +192,6 @@ class baseline_ann(torch.nn.Module):
 
         self.mlp3 = ANN_Module(nn.Linear, in_features=500, out_features=10)
 
-        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
-
     def forward(self, inputs):
         """
         :param inputs: [batch, input_size, t]
@@ -222,14 +212,15 @@ class baseline_ann(torch.nn.Module):
 
 class pretrained_model(torch.nn.Module):
     def __init__(self,
+        input_shape: Tuple[int],
+        n_class: int,
         batch_size: int,
-        in_channels: int,
         train_bias: bool,
     ):
         super().__init__()
 
         self.batch_size = batch_size
-        _ = in_channels
+        self.n_class = n_class
 
         self.mlp1 = nn.Linear(in_features=784, out_features=500)
         self.relu1 = nn.ReLU()
@@ -237,10 +228,7 @@ class pretrained_model(torch.nn.Module):
         self.mlp2 = nn.Linear(in_features=500, out_features=500)
         self.relu2 = nn.ReLU()
 
-        self.mlp3 = nn.Linear(in_features=500, out_features=10)
-
-        self.dropout1 = nn.Dropout(p=0.3, inplace=False)
-        self.dropout2 = nn.Dropout(p=0.3, inplace=False)
+        self.mlp3 = nn.Linear(in_features=500, out_features=self.n_class)
 
     def forward(self, inputs):
         """
@@ -248,12 +236,9 @@ class pretrained_model(torch.nn.Module):
         :return:
         """
         ann_l1 = self.relu1(self.mlp1(inputs))
-        drop_1 = self.dropout1(ann_l1)
+        ann_l2 = self.relu2(self.mlp2(ann_l1))
+        ann_l3 = self.mlp3(ann_l2)
 
-        ann_l2 = self.relu2(self.mlp2(drop_1))
-        drop_2 = self.dropout2(ann_l2)
-
-        ann_l3 = self.mlp3(drop_2)
         output = F.log_softmax(ann_l3, dim=1)
 
         return output

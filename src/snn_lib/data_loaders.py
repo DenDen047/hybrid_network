@@ -123,10 +123,8 @@ class TorchvisionDataset(Dataset):
         shape = img.shape
         img_spike = None
 
-        if self.image_mode == 'chw':
+        if self.image_mode == 'chw' and len(img.shape) == 3:
             img = np.transpose(img, (2, 0, 1))
-        else:
-            raise f'image_mode does not support {self.image_mode}'
 
         if self.flatten == True:
             img = img.reshape(-1)

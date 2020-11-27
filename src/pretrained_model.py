@@ -36,6 +36,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
+import networks.fixed_mlp_networks
 import networks.fixed_cnn_networks
 
 import utils
@@ -123,14 +124,6 @@ dataset_testset = eval(f'datasets.{dataset_name}')(root='/dataset', train=False,
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def realignment(x):
-    if len(x.shape[1:]) == 2:
-        x = x[:, None, :, :]
-    elif len(x.shape[1:]) == 3:
-        x = utils.hwc2chw(x)
-    return x.to(device)
-
-
 ########################### train function ###################################
 def train(model, optimizer, scheduler, train_data_loader, writer=None):
     eval_image_number = 0
@@ -143,10 +136,8 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(train_data_loader):
 
-        x_train = sample_batched[0]
+        x_train = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2]
-        x_train = realignment(x_train)
         output = model(x_train)
 
         model.zero_grad()
@@ -189,10 +180,8 @@ def test(model, test_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(test_data_loader):
 
-        x_test = sample_batched[0]
+        x_test = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        # reshape into [batch_size, dim0-2]
-        x_test = realignment(x_test)
         output = model(x_test)
 
         loss = criterion(output, target.long())
@@ -215,8 +204,11 @@ def test(model, test_data_loader, writer=None):
 
 if __name__ == "__main__":
 
+    logger.debug(conf)
+    logger.debug(args)
+
     model = eval(args.model)(
-        in_channels, size_h, size_w,
+        (in_channels, size_h, size_w),
         n_class,
         batch_size,
         train_bias,
@@ -314,6 +306,3 @@ if __name__ == "__main__":
         test_acc, test_loss = test(model, test_dataloader)
 
         logger.info('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
-
-
-

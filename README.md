@@ -4,6 +4,7 @@
 
 - [x] ann_snn_mlp.py
 - [x] ann_snn_cnn.py
+- [x] pretrained_model.py
 - [ ] fixedann_snn_mlp.py
 - [ ] fixedann_snn_cnn.py
 - [ ] ann_snn_mlp_coding.py

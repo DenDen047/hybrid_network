@@ -86,6 +86,8 @@ dataset_config:
     'MNIST'
   in_channels:
     1
+  n_class:
+    10
   max_rate:
     1
   use_transform:
@@ -109,5 +111,5 @@ pretrained_ann_path:
   /checkpoint/best_fixedann_snn_mlp_1
 
 acc_file_name:
-  'fixedann_snn_mlp.csv'
+  'fixedann_snn_mlp-accuracy.csv'
 
