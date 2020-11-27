@@ -15,7 +15,7 @@ docker run -it --rm \
     ${IMAGE_NAME} \
     /bin/bash -c "\
         python ann_snn_cnn.py \
-            --model networks.cnn_networks.ann6_snn2 \
+            --model networks.cnn_networks.baseline_ann \
             --config_file ann_snn_cnn.yaml \
             --train \
             --logging \

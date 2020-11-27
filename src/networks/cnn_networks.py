@@ -633,6 +633,7 @@ class baseline_ann(torch.nn.Module):
         )
 
         self.mlp7 = nn.Linear(in_features=1600, out_features=512)
+        self.act7 = nn.ReLU()
         self.mlp8 = nn.Linear(in_features=512, out_features=10)
 
     def forward(self, inputs):
@@ -648,7 +649,7 @@ class baseline_ann(torch.nn.Module):
         ann5_out = self.act5(self.ann5(ann4_out))
         ann6_out = self.ann6(ann5_out)
 
-        flatten_ann6_out = torch.flatten(ann6_out, start_dim=1, end_dim=-2)
+        flatten_ann6_out = torch.flatten(ann6_out, start_dim=1)
         mlp7_out = self.act7(self.mlp7(flatten_ann6_out))
         mlp8_out = self.mlp8(mlp7_out)
         ann_out = F.log_softmax(mlp8_out, dim=1)
