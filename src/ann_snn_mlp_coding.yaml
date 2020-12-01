@@ -1,6 +1,6 @@
 
 experiment_name:
-  ann_snn_cnn
+  ann_snn_mlp_coding
 
 pytorch_seed:
   2
@@ -101,11 +101,11 @@ checkpoint_base_path:
 
 # the checkpoint used for test
 test_checkpoint_path:
-  /checkpoint/pretrained_snn_mlp_1
+  /checkpoint/pretrained_  ann_snn_mlp_coding_1
 
 pretrained_ann_path:
-  /checkpoint/best_snn_mlp_1
+  /checkpoint/best_  ann_snn_mlp_coding_1
 
 acc_file_name:
-  'snn_mlp_acc.csv'
+  '  ann_snn_mlp_coding-accuracy.csv'
 

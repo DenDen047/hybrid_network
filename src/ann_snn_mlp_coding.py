@@ -125,10 +125,6 @@ testset = datasets.MNIST(root='/dataset', train=False, download=True, transform=
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-def preprocess(x):
-    return utils.add_time_dim(x, length)
-
-
 ########################### train function ###################################
 def train(model, optimizer, scheduler, train_data_loader, writer=None):
     eval_image_number = 0
@@ -141,9 +137,8 @@ def train(model, optimizer, scheduler, train_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(train_data_loader):
 
-        x_train = sample_batched[0]
+        x_train = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        x_train = preprocess(x_train).to(device)  # [batch_size, dim0, time_length]
         out_spike = model(x_train)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -188,9 +183,8 @@ def test(model, test_data_loader, writer=None):
 
     for i_batch, sample_batched in enumerate(test_data_loader):
 
-        x_test = sample_batched[0]
+        x_test = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
-        x_test = preprocess(x_test).to(device)
         out_spike = model(x_test)
 
         spike_count = torch.sum(out_spike, dim=2)
@@ -214,6 +208,9 @@ def test(model, test_data_loader, writer=None):
 
 
 if __name__ == "__main__":
+
+    logger.debug(conf)
+    logger.debug(args)
 
     model = eval(args.model)(
         batch_size,

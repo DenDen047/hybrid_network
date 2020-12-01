@@ -10,7 +10,7 @@ from snn_lib.schedulers import *
 from snn_lib.data_loaders import *
 import snn_lib.utilities
 
-from ann_layers import ANN_Module
+from . import utils
 
 
 class ReparameterizeBase(torch.nn.Module):
@@ -73,17 +73,19 @@ class baseline_snn(torch.nn.Module):
         :param inputs: [batch, input_size, t]
         :return:
         """
-
+        # preparing
         axon1_states = self.axon1.create_init_states()
         snn1_states = self.snn1.create_init_states()
-
         axon2_states = self.axon2.create_init_states()
         snn2_states = self.snn2.create_init_states()
-
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        axon1_out, axon1_states = self.axon1(inputs, axon1_states)
+        # converting
+        coding_out = utils.expand_along_time(inputs, length=self.length)
+
+        # snn
+        axon1_out, axon1_states = self.axon1(coding_out, axon1_states)
         spike_l1, snn1_states = self.snn1(axon1_out, snn1_states)
 
         axon2_out, axon2_states = self.axon2(spike_l1, axon2_states)
@@ -127,16 +129,18 @@ class baseline_snn_direct_input(torch.nn.Module):
         :param inputs: [batch, input_size, t]
         :return:
         """
-
+        # preparing
         snn1_states = self.snn1.create_init_states()
-
         axon2_states = self.axon2.create_init_states()
         snn2_states = self.snn2.create_init_states()
-
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        spike_l1, snn1_states = self.snn1(inputs, snn1_states)
+        # converting
+        coding_out = utils.expand_along_time(inputs, length=self.length)
+
+        # snn
+        spike_l1, snn1_states = self.snn1(coding_out, snn1_states)
 
         axon2_out, axon2_states = self.axon2(spike_l1, axon2_states)
         spike_l2, snn2_states = self.snn2(axon2_out, snn2_states)
@@ -145,7 +149,6 @@ class baseline_snn_direct_input(torch.nn.Module):
         spike_l3, snn3_states = self.snn3(axon3_out, snn3_states)
 
         return spike_l3
-
 
 
 class baseline_snn_direct_input2(torch.nn.Module):
@@ -196,8 +199,11 @@ class baseline_snn_direct_input2(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
+        # converting
+        coding_out = utils.expand_along_time(inputs, length=self.length)
+
         # snn
-        spike_l0, snn0_states = self.snn0(inputs, snn0_states)
+        spike_l0, snn0_states = self.snn0(coding_out, snn0_states)
 
         axon1_out, axon1_states = self.axon1(spike_l0, axon1_states)
         spike_l1, snn1_states = self.snn1(axon1_out, snn1_states)
@@ -211,7 +217,7 @@ class baseline_snn_direct_input2(torch.nn.Module):
         return spike_l3
 
 
-class ann1_poisson_snn2(ReparameterizeBase):
+class ann1_coding_snn2(ReparameterizeBase):
     def __init__(self,
         batch_size: int,
         length: int,
@@ -227,8 +233,8 @@ class ann1_poisson_snn2(ReparameterizeBase):
         self.batch_size = batch_size
 
         self.features = 500
-        self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=self.features * 2)
-        self.relu = nn.ReLU()
+        self.mlp1 = nn.Linear(in_features=784, out_features=self.features * 2)
+        self.act = nn.ReLU()
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -249,15 +255,15 @@ class ann1_poisson_snn2(ReparameterizeBase):
         # preprocess
         axon2_states = self.axon2.create_init_states()
         snn2_states = self.snn2.create_init_states()
-
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
         # ann layers
-        ann_out = self.relu(self.mlp1(inputs, steady_state=True))
+        ann_out = self.act(self.mlp1(inputs))
 
         # encoding
-        coding_out = self.coding(ann_out)
+        expand_ann_out = utils.expand_along_time(ann_out, length=self.length)
+        coding_out = self.coding(expand_ann_out)
 
         # snn layers
         axon2_out, axon2_states = self.axon2(coding_out, axon2_states)
@@ -269,7 +275,7 @@ class ann1_poisson_snn2(ReparameterizeBase):
         return spike_l3
 
 
-class ann2_poisson_snn1(ReparameterizeBase):
+class ann2_coding_snn1(ReparameterizeBase):
     def __init__(self,
         batch_size: int,
         length: int,
@@ -284,12 +290,12 @@ class ann2_poisson_snn1(ReparameterizeBase):
         self.length = length
         self.batch_size = batch_size
 
-        self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
-        self.relu1 = nn.ReLU()
+        self.mlp1 = nn.Linear(in_features=784, out_features=500)
+        self.act1 = nn.ReLU()
 
         self.features = 500
-        self.mlp2 = ANN_Module(nn.Linear, in_features=500, out_features=self.features * 2)
-        self.relu2 = nn.ReLU()
+        self.mlp2 = nn.Linear(in_features=500, out_features=self.features * 2)
+        self.act2 = nn.ReLU()
 
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
@@ -308,14 +314,15 @@ class ann2_poisson_snn1(ReparameterizeBase):
         snn3_states = self.snn3.create_init_states()
 
         # ann layers
-        ann_l1 = self.relu1(self.mlp1(inputs, steady_state=True))
-        ann_l2 = self.relu2(self.mlp2(ann_l1, steady_state=True))
+        ann_l1 = self.act1(self.mlp1(inputs))
+        ann_out = self.act2(self.mlp2(ann_l1))
 
         # encoding
-        ann_out = self.coding(ann_l2)
+        expand_ann_out = utils.expand_along_time(ann_out, length=self.length)
+        coding_out = self.coding(expand_ann_out)
 
         # snn layers
-        axon3_out, axon3_states = self.axon3(ann_out, axon3_states)
+        axon3_out, axon3_states = self.axon3(coding_out, axon3_states)
         spike_l3, snn3_states = self.snn3(axon3_out, snn3_states)
 
         return spike_l3
@@ -336,13 +343,13 @@ class baseline_ann(torch.nn.Module):
         self.length = length
         self.batch_size = batch_size
 
-        self.mlp1 = ANN_Module(nn.Linear, in_features=784, out_features=500)
-        self.relu1 = nn.ReLU()
+        self.mlp1 = nn.Linear(in_features=784, out_features=500)
+        self.act1 = nn.ReLU()
 
-        self.mlp2 = ANN_Module(nn.Linear, in_features=500, out_features=500)
-        self.relu2 = nn.ReLU()
+        self.mlp2 = nn.Linear(in_features=500, out_features=500)
+        self.act2 = nn.ReLU()
 
-        self.mlp3 = ANN_Module(nn.Linear, in_features=500, out_features=10)
+        self.mlp3 = nn.Linear(in_features=500, out_features=10)
 
         self.dropout1 = nn.Dropout(p=0.3, inplace=False)
         self.dropout2 = nn.Dropout(p=0.3, inplace=False)
@@ -353,13 +360,13 @@ class baseline_ann(torch.nn.Module):
         :return:
         """
 
-        ann_l1 = self.relu1(self.mlp1(inputs, steady_state=True))
+        ann_l1 = self.act1(self.mlp1(inputs))
         drop_1 = self.dropout1(ann_l1)
 
-        ann_l2 = self.relu2(self.mlp2(drop_1, steady_state=True))
+        ann_l2 = self.act2(self.mlp2(drop_1))
         drop_2 = self.dropout2(ann_l2)
 
-        ann_l3 = self.mlp3(drop_2, steady_state=True)
+        ann_l3 = self.mlp3(drop_2)
         output = F.log_softmax(ann_l3, dim=1)
 
         return output
