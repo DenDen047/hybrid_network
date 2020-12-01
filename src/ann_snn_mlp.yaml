@@ -48,7 +48,7 @@ scheduler:
   MultiStepLR:
     milestones:
       - 50
-      - 100
+      - 75
     gamma:
       0.1
   CosineAnnealingWarmRestarts:
@@ -100,5 +100,5 @@ test_checkpoint_path:
   /checkpoint/pretrained_ann_snn_mlp
 
 acc_file_name:
-  'ann_snn_mlp_acc.csv'
+  'ann_snn_mlp-accuracy.csv'
 

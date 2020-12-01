@@ -14,9 +14,24 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python ann_snn_cnn_coding.py \
-            --model networks.cnn_networks_coding.ann6_coding_snn2 \
-            --config_file ann_snn_cnn_coding.yaml \
+        python ann_snn_mlp.py \
+            --model networks.mlp_networks.baseline_snn \
+            --config_file ann_snn_mlp.yaml \
+            --train \
+            --logging && \
+        python ann_snn_mlp.py \
+            --model networks.mlp_networks.ann1_snn2 \
+            --config_file ann_snn_mlp.yaml \
+            --train \
+            --logging && \
+        python ann_snn_mlp.py \
+            --model networks.mlp_networks.ann2_snn1 \
+            --config_file ann_snn_mlp.yaml \
+            --train \
+            --logging && \
+        python ann_snn_mlp.py \
+            --model networks.mlp_networks.baseline_snn \
+            --config_file ann_snn_mlp.yaml \
             --train \
             --logging \
     "

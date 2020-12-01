@@ -35,7 +35,7 @@ import omegaconf
 from omegaconf import OmegaConf
 
 import networks.mlp_networks
-import cnn_networks
+import utils
 
 
 if torch.cuda.is_available():
@@ -106,102 +106,8 @@ dataset_config = conf['mnist_config']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
 
-# %% transform config
-if use_transform == True:
-    rand_transform = get_rand_transform(conf['transform'])
-else:
-    rand_transform = None
-
-# load mnist training dataset
-mnist_trainset = datasets.MNIST(root='/dataset', train=True, download=True, transform=rand_transform)
-
-# load mnist test dataset
-mnist_testset = datasets.MNIST(root='/dataset', train=False, download=True, transform=None)
-
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
-
-
-########################### train function ###################################
-def train(model, optimizer, scheduler, train_data_loader, writer=None):
-    eval_image_number = 0
-    correct_total = 0
-    wrong_total = 0
-
-    criterion = torch.nn.CrossEntropyLoss()
-
-    model.train()
-
-    for i_batch, sample_batched in enumerate(train_data_loader):
-
-        x_train = sample_batched[0].to(device)
-        target = sample_batched[1].to(device)
-        out_spike = model(x_train)
-
-        spike_count = torch.sum(out_spike, dim=2)
-
-        model.zero_grad()
-        loss = criterion(spike_count, target.long())
-        loss.backward()
-        optimizer.step()
-
-        # calculate acc
-        _, idx = torch.max(spike_count, dim=1)
-
-        eval_image_number += len(sample_batched[1])
-        wrong = len(torch.where(idx != target)[0])
-
-        correct = len(sample_batched[1]) - wrong
-        wrong_total += len(torch.where(idx != target)[0])
-        correct_total += correct
-        acc = correct_total / eval_image_number
-
-        # scheduler step
-        if isinstance(scheduler, torch.optim.lr_scheduler.CyclicLR):
-            scheduler.step()
-
-    # scheduler step
-    if isinstance(scheduler, torch.optim.lr_scheduler.MultiStepLR):
-        scheduler.step()
-
-    acc = correct_total / eval_image_number
-
-    return acc, loss
-
-
-def test(model, test_data_loader, writer=None):
-    eval_image_number = 0
-    correct_total = 0
-    wrong_total = 0
-
-    model.eval()
-
-    criterion = torch.nn.CrossEntropyLoss()
-
-    for i_batch, sample_batched in enumerate(test_data_loader):
-
-        x_test = sample_batched[0].to(device)
-        target = sample_batched[1].to(device)
-        out_spike = model(x_test)
-
-        spike_count = torch.sum(out_spike, dim=2)
-
-        loss = criterion(spike_count, target.long())
-
-        # calculate acc
-        _, idx = torch.max(spike_count, dim=1)
-
-        eval_image_number += len(sample_batched[1])
-        wrong = len(torch.where(idx != target)[0])
-
-        correct = len(sample_batched[1]) - wrong
-        wrong_total += len(torch.where(idx != target)[0])
-        correct_total += correct
-        acc = correct_total / eval_image_number
-
-    acc = correct_total / eval_image_number
-
-    return acc, loss
 
 
 if __name__ == "__main__":
@@ -226,17 +132,32 @@ if __name__ == "__main__":
     params = list(model.parameters())
 
     optimizer = get_optimizer(params, conf)
-
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = TorchvisionDataset(mnist_trainset, max_rate=1, length=length, flatten=True)
-    train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
-
-    test_data = TorchvisionDataset(mnist_testset, max_rate=1, length=length, flatten=True)
-    test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
+    train_set, val_set, test_set = utils.load_dataset(
+        dataset_name='MNIST',
+        transform=get_rand_transform(conf['transform'])
+    )
+    train_dataloader = DataLoader(
+        TorchvisionDataset(train_set, max_rate=1, length=length, flatten=True), batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+    val_dataloader = DataLoader(
+        TorchvisionDataset(val_set, max_rate=1, length=length, flatten=True),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+    test_dataloader = DataLoader(
+        TorchvisionDataset(test_set, max_rate=1, length=length, flatten=True),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
 
     train_acc_list = []
-    test_acc_list = []
+    val_acc_list = []
     checkpoint_list = []
 
     if args.train == True:
@@ -247,7 +168,7 @@ if __name__ == "__main__":
             epoch_time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
             model.train()
-            train_acc, train_loss = train(model, optimizer, scheduler, train_dataloader, writer=None)
+            train_acc, train_loss = utils.train(model, optimizer, scheduler, train_dataloader, device, writer=None)
             train_acc_list.append(train_acc)
 
             logger.info('Train epoch: {}, acc: {}'.format(j, train_acc))
@@ -265,45 +186,56 @@ if __name__ == "__main__":
                     'loss': train_loss,
                 }, checkpoint_path)
 
-            # test model
+            # validate model
             model.eval()
-            test_acc, test_loss = test(model, test_dataloader, writer=None)
+            val_acc, val_loss = utils.evaluate(model, val_dataloader, device, writer=None)
 
-            logger.info('Test epoch: {}, acc: {}'.format(j, test_acc))
-            test_acc_list.append(test_acc)
+            logger.info('Val epoch: {}, acc: {}'.format(j, val_acc))
+            val_acc_list.append(val_acc)
 
             # recode the metrics
             writer.add_scalar('Loss/train', train_loss, j)
-            writer.add_scalar('Loss/test', train_acc, j)
-            writer.add_scalar('Accuracy/train', test_loss, j)
-            writer.add_scalar('Accuracy/test', test_acc, j)
+            writer.add_scalar('Loss/val', val_loss, j)
+            writer.add_scalar('Accuracy/train', train_acc, j)
+            writer.add_scalar('Accuracy/val', val_acc, j)
 
         # save result and get best epoch
         train_acc_list = np.array(train_acc_list)
-        test_acc_list = np.array(test_acc_list)
+        val_acc_list = np.array(val_acc_list)
 
-        acc_df = pd.DataFrame(data={'train_acc': train_acc_list, 'test_acc': test_acc_list})
+        acc_df = pd.DataFrame(data={
+            'train_acc': train_acc_list,
+            'val_acc': val_acc_list
+        })
 
         acc_df.to_csv(acc_file_name)
 
         best_train_acc = np.max(train_acc_list)
-        best_train_epoch = np.argmax(test_acc_list)
+        best_train_epoch = np.argmax(val_acc_list)
 
-        best_test_epoch = np.argmax(test_acc_list)
-        best_test_acc = np.max(test_acc_list)
+        best_val_epoch = np.argmax(val_acc_list)
+        best_val_acc = np.max(val_acc_list)
 
-        best_checkpoint = checkpoint_list[best_test_epoch]
+        best_checkpoint = checkpoint_list[best_val_epoch]
+        logger.info(f'best checkpoint: {best_checkpoint}')
 
+        # test
+        test_checkpoint = torch.load(best_checkpoint)
+        model.load_state_dict(test_checkpoint["snn_state_dict"])
+
+        test_acc, test_loss = utils.evaluate(model, test_dataloader)
+
+        # show summary
         logger.info('Summary:')
         logger.info('Best train acc: {}, epoch: {}'.format(best_train_acc, best_train_epoch))
-        logger.info('Best test acc: {}, epoch: {}'.format(best_test_acc, best_test_epoch))
-        logger.info(f'best checkpoint: {best_checkpoint}')
+        logger.info('Best val acc: {}, epoch: {}'.format(best_val_acc, best_val_epoch))
+        logger.info('Best test acc: {}, loss: {}'.format(test_acc, test_loss))
 
     elif args.test == True:
         test_checkpoint = torch.load(test_checkpoint_path)
         model.load_state_dict(test_checkpoint["snn_state_dict"])
 
-        test_acc, test_loss = test(model, test_dataloader)
+        test_acc, test_loss = utils.evaluate(model, test_dataloader, device)
 
         logger.info('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
 
