@@ -141,6 +141,7 @@ if __name__ == "__main__":
         dataset_name=dataset_name,
         batch_size=batch_size,
         length=length,
+        flatten=in_channels == 0,
         transform=get_rand_transform(conf['transform'])
     )
 

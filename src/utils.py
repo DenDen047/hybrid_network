@@ -70,6 +70,7 @@ def load_datasetloader(
     dataset_name: str,
     batch_size: int,
     length: int,
+    flatten: bool,
     transform=None,
     size_ratio: List[float] = [0.6, 0.2, 0.2]
 ) -> (Any, Any, Any):
@@ -79,18 +80,18 @@ def load_datasetloader(
     )
 
     train_dataloader = DataLoader(
-        TorchvisionDataset(train_set, max_rate=1, length=length, flatten=True), batch_size=batch_size,
+        TorchvisionDataset(train_set, max_rate=1, length=length, flatten=flatten), batch_size=batch_size,
         shuffle=True,
         drop_last=True
     )
     val_dataloader = DataLoader(
-        TorchvisionDataset(val_set, max_rate=1, length=length, flatten=True),
+        TorchvisionDataset(val_set, max_rate=1, length=length, flatten=flatten),
         batch_size=batch_size,
         shuffle=True,
         drop_last=True
     )
     test_dataloader = DataLoader(
-        TorchvisionDataset(test_set, max_rate=1, length=length, flatten=True),
+        TorchvisionDataset(test_set, max_rate=1, length=length, flatten=flatten),
         batch_size=batch_size,
         shuffle=True,
         drop_last=True

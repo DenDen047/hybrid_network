@@ -4,9 +4,9 @@
 
 ### train/val/test dataset
 
-- [ ] ann_snn.py
+- [x] ann_snn.py
     - [x] ann_snn_mlp.py
-    - [ ] ann_snn_cnn.py
+    - [x] ann_snn_cnn.py
 - [ ] pretrained_model.py
 - [ ] fixedann_snn_mlp.py
 - [ ] fixedann_snn_cnn.py
