@@ -1,9 +1,11 @@
 import numpy as np
 from typing import Any, Callable, Optional, Tuple, List
 import torch
+from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets
 
 from snn_lib.data_loaders import get_rand_transform
+from snn_lib.data_loaders import TorchvisionDataset
 
 
 def bhwc2bchw(x):
@@ -64,10 +66,49 @@ def load_dataset(
 
     return train_set, val_set, test_set
 
+def load_datasetloader(
+    dataset_name: str,
+    batch_size: int,
+    length: int,
+    transform=None,
+    size_ratio: List[float] = [0.6, 0.2, 0.2]
+) -> (Any, Any, Any):
+    train_set, val_set, test_set = load_dataset(
+        dataset_name=dataset_name,
+        transform=transform
+    )
+
+    train_dataloader = DataLoader(
+        TorchvisionDataset(train_set, max_rate=1, length=length, flatten=True), batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+    val_dataloader = DataLoader(
+        TorchvisionDataset(val_set, max_rate=1, length=length, flatten=True),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+    test_dataloader = DataLoader(
+        TorchvisionDataset(test_set, max_rate=1, length=length, flatten=True),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+
+    return train_dataloader, val_dataloader, test_dataloader
+
 
 
 ########################### train function ###################################
-def train(model, optimizer, scheduler, train_data_loader, device, writer=None):
+def train(
+    model,
+    optimizer,
+    scheduler,
+    train_data_loader,
+    device=torch.device('cpu'),
+    writer=None
+):
     eval_image_number = 0
     correct_total = 0
     wrong_total = 0
@@ -113,7 +154,7 @@ def train(model, optimizer, scheduler, train_data_loader, device, writer=None):
     return acc, loss
 
 
-def evaluate(model, test_data_loader, device, writer=None):
+def evaluate(model, test_data_loader, device=torch.device('cpu'), writer=None):
     eval_image_number = 0
     correct_total = 0
     wrong_total = 0

@@ -134,26 +134,11 @@ if __name__ == "__main__":
     optimizer = get_optimizer(params, conf)
     scheduler = get_scheduler(optimizer, conf)
 
-    train_set, val_set, test_set = utils.load_dataset(
+    train_dataloader, val_dataloader, test_dataloader = utils.load_datasetloader(
         dataset_name='MNIST',
+        batch_size=batch_size,
+        length=length,
         transform=get_rand_transform(conf['transform'])
-    )
-    train_dataloader = DataLoader(
-        TorchvisionDataset(train_set, max_rate=1, length=length, flatten=True), batch_size=batch_size,
-        shuffle=True,
-        drop_last=True
-    )
-    val_dataloader = DataLoader(
-        TorchvisionDataset(val_set, max_rate=1, length=length, flatten=True),
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=True
-    )
-    test_dataloader = DataLoader(
-        TorchvisionDataset(test_set, max_rate=1, length=length, flatten=True),
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=True
     )
 
     train_acc_list = []
@@ -223,7 +208,7 @@ if __name__ == "__main__":
         test_checkpoint = torch.load(best_checkpoint)
         model.load_state_dict(test_checkpoint["snn_state_dict"])
 
-        test_acc, test_loss = utils.evaluate(model, test_dataloader)
+        test_acc, test_loss = utils.evaluate(model, test_dataloader, device)
 
         # show summary
         logger.info('Summary:')
