@@ -34,6 +34,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
+import networks.mlp_networks
 import networks.cnn_networks
 import utils
 
@@ -44,7 +45,7 @@ else:
     device = torch.device('cpu')
 
 # arg parser
-parser = argparse.ArgumentParser(description='ann_snn_cnn')
+parser = argparse.ArgumentParser(description='ann_snn_{mlp|cnn}')
 parser.add_argument('--model', type=str, help='model')
 parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
@@ -175,7 +176,7 @@ if __name__ == "__main__":
 
             # test model
             model.eval()
-            test_acc, test_loss = test(model, test_dataloader, writer=None)
+            test_acc, test_loss = utils.evaluate(model, val_dataloader, device, writer=None)
 
             logger.info('Test epoch: {}, acc: {}'.format(j, test_acc))
             test_acc_list.append(test_acc)
@@ -212,7 +213,7 @@ if __name__ == "__main__":
         test_checkpoint = torch.load(test_checkpoint_path)
         model.load_state_dict(test_checkpoint["snn_state_dict"])
 
-        test_acc, test_loss = utils.evaluate(model, test_dataloader)
+        test_acc, test_loss = utils.evaluate(model, test_dataloader, device)
 
         logger.info('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
 

@@ -81,7 +81,11 @@ transform:
     probability:
       0.5
 
-mnist_config:
+dataset_config:
+  name:
+    'MNIST'
+  in_channels:
+    0
   max_rate:
     1
   use_transform:
