@@ -104,8 +104,8 @@ test_checkpoint_path:
   /checkpoint/pretrained_snn_mlp_1
 
 pretrained_ann_path:
-  /checkpoint/best_snn_mlp_1
+  /checkpoint/best_ann_snn_cnn_coding_1
 
 acc_file_name:
-  'snn_mlp_acc.csv'
+  'ann_snn_cnn_coding-accuracy.csv'
 
