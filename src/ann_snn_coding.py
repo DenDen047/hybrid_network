@@ -34,7 +34,8 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import networks.mlp_networks
+import networks.mlp_networks_coding
+import networks.cnn_networks_coding
 import utils
 
 
@@ -102,7 +103,9 @@ train_bias = hyperparam_conf['train_bias']
 train_coefficients = hyperparam_conf['train_coefficients']
 
 # %% mnist config
-dataset_config = conf['mnist_config']
+dataset_config = conf['dataset_config']
+dataset_name = dataset_config['name']
+in_channels = dataset_config['in_channels']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
 
@@ -111,9 +114,8 @@ acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
 if __name__ == "__main__":
-
-    logger.info(conf)
-    logger.info(args)
+    logger.debug(conf)
+    logger.debug(args)
 
     model = eval(args.model)(
         batch_size,
@@ -135,9 +137,10 @@ if __name__ == "__main__":
     scheduler = get_scheduler(optimizer, conf)
 
     train_dataloader, val_dataloader, test_dataloader = utils.load_datasetloader(
-        dataset_name='MNIST',
+        dataset_name=dataset_name,
         batch_size=batch_size,
         length=length,
+        flatten=in_channels == 0,
         transform=get_rand_transform(conf['transform'])
     )
 
@@ -171,7 +174,7 @@ if __name__ == "__main__":
                     'loss': train_loss,
                 }, checkpoint_path)
 
-            # validate model
+            # test model
             model.eval()
             val_acc, val_loss = utils.evaluate(model, val_dataloader, device, writer=None)
 
@@ -188,10 +191,7 @@ if __name__ == "__main__":
         train_acc_list = np.array(train_acc_list)
         val_acc_list = np.array(val_acc_list)
 
-        acc_df = pd.DataFrame(data={
-            'train_acc': train_acc_list,
-            'val_acc': val_acc_list
-        })
+        acc_df = pd.DataFrame(data={'train_acc': train_acc_list, 'val_acc': val_acc_list})
 
         acc_df.to_csv(acc_file_name)
 

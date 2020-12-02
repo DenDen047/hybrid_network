@@ -85,7 +85,7 @@ dataset_config:
   name:
     'MNIST'
   in_channels:
-    1
+    0
   max_rate:
     1
   use_transform:
