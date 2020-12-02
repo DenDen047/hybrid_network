@@ -51,8 +51,7 @@ else:
 parser = argparse.ArgumentParser(description='mlp snn')
 parser.add_argument('--model', type=str, help='model')
 parser.add_argument('--pretrained_model', type=str, help='model')
-parser.add_argument('--config_file', type=str, default='fixedann_snn_mlp.yaml',
-                    help='path to configuration file')
+parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
 parser.add_argument('--logging', action='store_true', default=True, help='if true, output the all image/pdf files during the process')

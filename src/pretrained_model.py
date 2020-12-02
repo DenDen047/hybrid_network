@@ -205,9 +205,9 @@ if __name__ == "__main__":
 
         # test
         test_checkpoint = torch.load(best_checkpoint)
-        model.load_state_dict(test_checkpoint["snn_state_dict"])
+        model.load_state_dict(test_checkpoint["model_state_dict"])
 
-        test_acc, test_loss = utils.evaluate(model, test_dataloader, device)
+        test_acc, test_loss = utils.evaluate(model, test_dataloader, device, mode='continue')
 
         # show summary
         logger.info('Summary:')
