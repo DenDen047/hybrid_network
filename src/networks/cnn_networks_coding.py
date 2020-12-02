@@ -221,9 +221,9 @@ class baseline_snn(torch.nn.Module):
 
 class ann1_coding_snn7(ReparameterizeBase):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -383,9 +383,9 @@ class ann1_coding_snn7(ReparameterizeBase):
 
 class ann4_coding_snn4(ReparameterizeBase):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -507,9 +507,9 @@ class ann4_coding_snn4(ReparameterizeBase):
 
 class ann6_coding_snn2(ReparameterizeBase):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -607,9 +607,9 @@ class ann6_coding_snn2(ReparameterizeBase):
 
 class baseline_ann(torch.nn.Module):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,

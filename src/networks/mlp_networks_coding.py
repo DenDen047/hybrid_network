@@ -42,6 +42,7 @@ class ReparameterizeBase(torch.nn.Module):
 
 class baseline_snn(torch.nn.Module):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
         train_coefficients: bool,
@@ -99,6 +100,7 @@ class baseline_snn(torch.nn.Module):
 
 class baseline_snn_direct_input(torch.nn.Module):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
         train_coefficients: bool,
@@ -153,6 +155,7 @@ class baseline_snn_direct_input(torch.nn.Module):
 
 class baseline_snn_direct_input2(torch.nn.Module):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
         train_coefficients: bool,
@@ -219,6 +222,7 @@ class baseline_snn_direct_input2(torch.nn.Module):
 
 class ann1_coding_snn2(ReparameterizeBase):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
         train_coefficients: bool,
@@ -277,6 +281,7 @@ class ann1_coding_snn2(ReparameterizeBase):
 
 class ann2_coding_snn1(ReparameterizeBase):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
         train_coefficients: bool,
@@ -330,6 +335,7 @@ class ann2_coding_snn1(ReparameterizeBase):
 
 class baseline_ann(torch.nn.Module):
     def __init__(self,
+        in_channels: int,
         batch_size: int,
         length: int,
         train_coefficients: bool,

@@ -118,6 +118,7 @@ if __name__ == "__main__":
     logger.debug(args)
 
     model = eval(args.model)(
+        in_channels,
         batch_size,
         length,
         train_coefficients,
