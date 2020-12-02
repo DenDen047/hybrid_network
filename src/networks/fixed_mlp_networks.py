@@ -16,9 +16,10 @@ from . import utils
 
 class baseline_snn(torch.nn.Module):
     def __init__(self,
+        in_channels: int, size_h: int, input_w: int,
         batch_size: int,
+        n_class: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -72,9 +73,10 @@ class baseline_snn(torch.nn.Module):
 
 class ann1_snn2(torch.nn.Module):
     def __init__(self,
+        in_channels: int, size_h: int, input_w: int,
         batch_size: int,
+        n_class: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -127,9 +129,10 @@ class ann1_snn2(torch.nn.Module):
 
 class ann2_snn1(torch.nn.Module):
     def __init__(self,
+        in_channels: int, size_h: int, input_w: int,
         batch_size: int,
+        n_class: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
@@ -175,9 +178,10 @@ class ann2_snn1(torch.nn.Module):
 
 class baseline_ann(torch.nn.Module):
     def __init__(self,
+        in_channels: int, size_h: int, input_w: int,
         batch_size: int,
+        n_class: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
