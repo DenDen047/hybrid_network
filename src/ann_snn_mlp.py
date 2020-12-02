@@ -35,7 +35,6 @@ import omegaconf
 from omegaconf import OmegaConf
 
 import networks.mlp_networks
-import networks.cnn_networks
 import utils
 
 
@@ -45,7 +44,7 @@ else:
     device = torch.device('cpu')
 
 # arg parser
-parser = argparse.ArgumentParser(description='ann_snn_{mlp|cnn}')
+parser = argparse.ArgumentParser(description='mlp snn')
 parser.add_argument('--model', type=str, help='model')
 parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
@@ -102,10 +101,8 @@ membrane_filter = hyperparam_conf['membrane_filter']
 train_bias = hyperparam_conf['train_bias']
 train_coefficients = hyperparam_conf['train_coefficients']
 
-# %% dataset config
-dataset_config = conf['dataset_config']
-dataset_name = dataset_config['name']
-in_channels = dataset_config['in_channels']
+# %% mnist config
+dataset_config = conf['mnist_config']
 max_rate = dataset_config['max_rate']
 use_transform = dataset_config['use_transform']
 
@@ -114,13 +111,13 @@ acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
 if __name__ == "__main__":
-    logger.debug(conf)
-    logger.debug(args)
+
+    logger.info(conf)
+    logger.info(args)
 
     model = eval(args.model)(
         batch_size,
         length,
-        in_channels,
         train_coefficients,
         train_bias,
         membrane_filter,
@@ -138,10 +135,9 @@ if __name__ == "__main__":
     scheduler = get_scheduler(optimizer, conf)
 
     train_dataloader, val_dataloader, test_dataloader = utils.load_datasetloader(
-        dataset_name=dataset_name,
+        dataset_name='MNIST',
         batch_size=batch_size,
         length=length,
-        flatten=in_channels == 0,
         transform=get_rand_transform(conf['transform'])
     )
 
@@ -175,7 +171,7 @@ if __name__ == "__main__":
                     'loss': train_loss,
                 }, checkpoint_path)
 
-            # test model
+            # validate model
             model.eval()
             val_acc, val_loss = utils.evaluate(model, val_dataloader, device, writer=None)
 
@@ -192,7 +188,10 @@ if __name__ == "__main__":
         train_acc_list = np.array(train_acc_list)
         val_acc_list = np.array(val_acc_list)
 
-        acc_df = pd.DataFrame(data={'train_acc': train_acc_list, 'val_acc': val_acc_list})
+        acc_df = pd.DataFrame(data={
+            'train_acc': train_acc_list,
+            'val_acc': val_acc_list
+        })
 
         acc_df.to_csv(acc_file_name)
 
@@ -218,7 +217,6 @@ if __name__ == "__main__":
         logger.info('Best test acc: {}, loss: {}'.format(test_acc, test_loss))
 
     elif args.test == True:
-
         test_checkpoint = torch.load(test_checkpoint_path)
         model.load_state_dict(test_checkpoint["snn_state_dict"])
 
