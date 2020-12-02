@@ -85,14 +85,12 @@ dataset_config:
   name:
     'MNIST'
   in_channels:
-    1
+    0
   n_class:
     10
   max_rate:
     1
   use_transform:
-    True
-  flatten:
     True
 
 # configs for saving checkpoint

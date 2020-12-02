@@ -80,18 +80,18 @@ def load_datasetloader(
     )
 
     train_dataloader = DataLoader(
-        TorchvisionDataset(train_set, max_rate=1, length=length, flatten=flatten), batch_size=batch_size,
+        TorchvisionDataset(train_set, max_rate=1, flatten=flatten), batch_size=batch_size,
         shuffle=True,
         drop_last=True
     )
     val_dataloader = DataLoader(
-        TorchvisionDataset(val_set, max_rate=1, length=length, flatten=flatten),
+        TorchvisionDataset(val_set, max_rate=1, flatten=flatten),
         batch_size=batch_size,
         shuffle=True,
         drop_last=True
     )
     test_dataloader = DataLoader(
-        TorchvisionDataset(test_set, max_rate=1, length=length, flatten=flatten),
+        TorchvisionDataset(test_set, max_rate=1, flatten=flatten),
         batch_size=batch_size,
         shuffle=True,
         drop_last=True
@@ -108,7 +108,8 @@ def train(
     scheduler,
     train_data_loader,
     device=torch.device('cpu'),
-    writer=None
+    writer=None,
+    mode: str = 'spike'
 ):
     eval_image_number = 0
     correct_total = 0
@@ -124,7 +125,10 @@ def train(
         target = sample_batched[1].to(device)
         out_spike = model(x_train)
 
-        spike_count = torch.sum(out_spike, dim=2)
+        if mode == 'spike':
+            spike_count = torch.sum(out_spike, dim=2)
+        elif mode == 'continue':
+            spike_count = out_spike
 
         model.zero_grad()
         loss = criterion(spike_count, target.long())
@@ -155,7 +159,13 @@ def train(
     return acc, loss
 
 
-def evaluate(model, test_data_loader, device=torch.device('cpu'), writer=None):
+def evaluate(
+    model,
+    test_data_loader,
+    device=torch.device('cpu'),
+    writer=None,
+    mode: str = 'spike'
+):
     eval_image_number = 0
     correct_total = 0
     wrong_total = 0
@@ -170,7 +180,10 @@ def evaluate(model, test_data_loader, device=torch.device('cpu'), writer=None):
         target = sample_batched[1].to(device)
         out_spike = model(x_test)
 
-        spike_count = torch.sum(out_spike, dim=2)
+        if mode == 'spike':
+            spike_count = torch.sum(out_spike, dim=2)
+        elif mode == 'continue':
+            spike_count = out_spike
 
         loss = criterion(spike_count, target.long())
 
