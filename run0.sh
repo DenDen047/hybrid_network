@@ -14,21 +14,9 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python pretrained_model.py \
-            --model networks.fixed_mlp_networks.pretrained_model \
-            --config_file fixedann_snn_mlp.yaml \
-            --train \
-            --logging && \
-        python fixedann_snn.py \
-            --model networks.fixed_mlp_networks.ann1_snn2 \
-            --pretrained_model networks.fixed_mlp_networks.pretrained_model \
-            --config_file fixedann_snn_mlp.yaml \
-            --train \
-            --logging && \
-        python fixedann_snn.py \
-            --model networks.fixed_mlp_networks.ann2_snn1 \
-            --pretrained_model networks.fixed_mlp_networks.pretrained_model \
-            --config_file fixedann_snn_mlp.yaml \
+        python ann_snn.py \
+            --model networks.mlp_networks.baseline_ann \
+            --config_file ann_snn_mlp.yaml \
             --train \
             --logging \
     "
