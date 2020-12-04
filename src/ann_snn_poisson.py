@@ -34,7 +34,8 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import networks.mlp_networks_poisson
+import networks.mlp_networks
+import networks.cnn_networks
 import utils
 
 
@@ -44,7 +45,7 @@ else:
     device = torch.device('cpu')
 
 # arg parser
-parser = argparse.ArgumentParser(description='mlp snn')
+parser = argparse.ArgumentParser(description='ann and snn with poisson coding')
 parser.add_argument('--model', type=str, help='model')
 parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
@@ -103,20 +104,11 @@ train_coefficients = hyperparam_conf['train_coefficients']
 
 # %% mnist config
 dataset_config = conf['dataset_config']
+dataset_name = dataset_config['name']
 max_rate = dataset_config['max_rate']
+in_channels = dataset_config['in_channels']
 use_transform = dataset_config['use_transform']
-
-# %% transform config
-if use_transform == True:
-    rand_transform = get_rand_transform(conf['transform'])
-else:
-    rand_transform = None
-
-# load mnist training dataset
-mnist_trainset = datasets.MNIST(root='/dataset', train=True, download=True, transform=rand_transform)
-
-# load mnist test dataset
-mnist_testset = datasets.MNIST(root='/dataset', train=False, download=True, transform=None)
+flatten = in_channels == 0
 
 # acc file name
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
@@ -205,15 +197,19 @@ def test(model, test_data_loader, writer=None):
 
 
 if __name__ == "__main__":
+    logger.debug(conf)
+    logger.debug(args)
 
     model = eval(args.model)(
         batch_size,
         length,
+        in_channels,
         train_coefficients,
         train_bias,
         membrane_filter,
         tau_m,
-        tau_s
+        tau_s,
+        input_type='spike'
     ).to(device)
 
     writer_log_dir = f"/torch_logs/{TIMESTAMP}"
@@ -223,17 +219,35 @@ if __name__ == "__main__":
     params = list(model.parameters())
 
     optimizer = get_optimizer(params, conf)
-
     scheduler = get_scheduler(optimizer, conf)
 
-    train_data = TorchvisionDataset_Poisson_Spike(mnist_trainset, max_rate=1, length=length, flatten=True)
-    train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True, drop_last=True)
+    # load dataset
+    train_set, val_set, test_set = utils.load_dataset(
+        dataset_name=dataset_name,
+        transform=get_rand_transform(conf['transform'])
+    )
 
-    test_data = TorchvisionDataset_Poisson_Spike(mnist_testset, max_rate=1, length=length, flatten=True)
-    test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True, drop_last=True)
+    train_dataloader = DataLoader(
+        TorchvisionDataset_Poisson_Spike(train_set, max_rate=1, length=length, flatten=flatten),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+    val_dataloader = DataLoader(
+        TorchvisionDataset_Poisson_Spike(val_set, max_rate=1, length=length, flatten=flatten),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+    test_dataloader = DataLoader(
+        TorchvisionDataset_Poisson_Spike(test_set, max_rate=1, length=length, flatten=flatten),
+        batch_size=batch_size,
+        shuffle=True,
+        drop_last=True
+    )
 
     train_acc_list = []
-    test_acc_list = []
+    val_acc_list = []
     checkpoint_list = []
 
     if args.train == True:
@@ -244,7 +258,7 @@ if __name__ == "__main__":
             epoch_time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
             model.train()
-            train_acc, train_loss = train(model, optimizer, scheduler, train_dataloader, writer=None)
+            train_acc, train_loss = utils.train(model, optimizer, scheduler, train_dataloader, device, writer=None)
             train_acc_list.append(train_acc)
 
             logger.info('Train epoch: {}, acc: {}'.format(j, train_acc))
@@ -264,43 +278,51 @@ if __name__ == "__main__":
 
             # test model
             model.eval()
-            test_acc, test_loss = test(model, test_dataloader, writer=None)
+            val_acc, val_loss = utils.evaluate(model, val_dataloader, device, writer=None)
 
-            logger.info('Test epoch: {}, acc: {}'.format(j, test_acc))
-            test_acc_list.append(test_acc)
+            logger.info('Val epoch: {}, acc: {}'.format(j, val_acc))
+            val_acc_list.append(val_acc)
 
             # recode the metrics
             writer.add_scalar('Loss/train', train_loss, j)
-            writer.add_scalar('Loss/test', train_acc, j)
-            writer.add_scalar('Accuracy/train', test_loss, j)
-            writer.add_scalar('Accuracy/test', test_acc, j)
+            writer.add_scalar('Loss/val', val_loss, j)
+            writer.add_scalar('Accuracy/train', train_acc, j)
+            writer.add_scalar('Accuracy/val', val_acc, j)
 
         # save result and get best epoch
         train_acc_list = np.array(train_acc_list)
-        test_acc_list = np.array(test_acc_list)
+        val_acc_list = np.array(val_acc_list)
 
-        acc_df = pd.DataFrame(data={'train_acc': train_acc_list, 'test_acc': test_acc_list})
+        acc_df = pd.DataFrame(data={'train_acc': train_acc_list, 'val_acc': val_acc_list})
 
         acc_df.to_csv(acc_file_name)
 
         best_train_acc = np.max(train_acc_list)
-        best_train_epoch = np.argmax(test_acc_list)
+        best_train_epoch = np.argmax(val_acc_list)
 
-        best_test_epoch = np.argmax(test_acc_list)
-        best_test_acc = np.max(test_acc_list)
+        best_val_epoch = np.argmax(val_acc_list)
+        best_val_acc = np.max(val_acc_list)
 
-        best_checkpoint = checkpoint_list[best_test_epoch]
+        best_checkpoint = checkpoint_list[best_val_epoch]
+        logger.info(f'best checkpoint: {best_checkpoint}')
 
+        # test
+        test_checkpoint = torch.load(best_checkpoint)
+        model.load_state_dict(test_checkpoint["snn_state_dict"])
+
+        test_acc, test_loss = utils.evaluate(model, test_dataloader, device)
+
+        # show summary
         logger.info('Summary:')
         logger.info('Best train acc: {}, epoch: {}'.format(best_train_acc, best_train_epoch))
-        logger.info('Best test acc: {}, epoch: {}'.format(best_test_acc, best_test_epoch))
-        logger.info(f'best checkpoint: {best_checkpoint}')
+        logger.info('Best val acc: {}, epoch: {}'.format(best_val_acc, best_val_epoch))
+        logger.info('Best test acc: {}, loss: {}'.format(test_acc, test_loss))
 
     elif args.test == True:
         test_checkpoint = torch.load(test_checkpoint_path)
         model.load_state_dict(test_checkpoint["snn_state_dict"])
 
-        test_acc, test_loss = test(model, test_dataloader)
+        test_acc, test_loss = utils.evaluate(model, test_dataloader, device)
 
         logger.info('Test checkpoint: {}, acc: {}'.format(test_checkpoint_path, test_acc))
 
