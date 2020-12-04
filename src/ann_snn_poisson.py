@@ -34,8 +34,8 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
-import networks.mlp_networks
-import networks.cnn_networks
+import networks.fixed_mlp_networks
+import networks.fixed_cnn_networks
 import utils
 
 
@@ -105,8 +105,11 @@ train_coefficients = hyperparam_conf['train_coefficients']
 # %% mnist config
 dataset_config = conf['dataset_config']
 dataset_name = dataset_config['name']
+n_class = dataset_config['n_class']
 max_rate = dataset_config['max_rate']
 in_channels = dataset_config['in_channels']
+size_h = dataset_config['size_h']
+size_w = dataset_config['size_w']
 use_transform = dataset_config['use_transform']
 flatten = in_channels == 0
 
@@ -201,9 +204,10 @@ if __name__ == "__main__":
     logger.debug(args)
 
     model = eval(args.model)(
+        in_channels, size_h, size_w,
         batch_size,
+        n_class,
         length,
-        in_channels,
         train_coefficients,
         train_bias,
         membrane_filter,

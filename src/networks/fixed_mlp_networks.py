@@ -25,6 +25,7 @@ class baseline_snn(torch.nn.Module):
         membrane_filter: bool,
         tau_m: int,
         tau_s: int,
+        input_type: str = 'image',
     ):
         super().__init__()
 
@@ -34,6 +35,7 @@ class baseline_snn(torch.nn.Module):
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
         self.membrane_filter = membrane_filter
+        self.input_type = input_type
 
         self.axon1 = dual_exp_iir_layer((784,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn1 = neuron_layer(784, 500, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
@@ -58,7 +60,10 @@ class baseline_snn(torch.nn.Module):
         snn3_states = self.snn3.create_init_states()
 
         # converting
-        coding_out = utils.expand_along_time(inputs, length=self.length)
+        if self.input_type == 'image':
+            coding_out = utils.expand_along_time(inputs, length=self.length)
+        elif self.input_type == 'spike':
+            coding_out = inputs
 
         # snn
         axon1_out, axon1_states = self.axon1(coding_out, axon1_states)
@@ -82,6 +87,7 @@ class ann1_snn2(torch.nn.Module):
         membrane_filter: bool,
         tau_m: int,
         tau_s: int,
+        input_type: str = 'image',
     ):
         super().__init__()
 
@@ -94,6 +100,7 @@ class ann1_snn2(torch.nn.Module):
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
         self.membrane_filter = membrane_filter
+        self.input_type = input_type
 
         self.axon2 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn2 = neuron_layer(500, 500, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
@@ -112,11 +119,13 @@ class ann1_snn2(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        # ann
-        ann_out = self.sigm(inputs)
-
-        # converting
-        coding_out = utils.expand_along_time(ann_out, length=self.length)
+        if self.input_type == 'image':
+            # ann
+            ann_out = self.sigm(inputs)
+            # converting
+            coding_out = utils.expand_along_time(ann_out, length=self.length)
+        elif self.input_type == 'spike':
+            coding_out = inputs
 
         # snn
         axon2_out, axon2_states = self.axon2(coding_out, axon2_states)

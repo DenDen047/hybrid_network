@@ -12,6 +12,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from torchvision import transforms, utils
 import torch
+from pprint import pprint
 
 
 def get_rand_transform(transform_config):
@@ -32,8 +33,25 @@ def get_rand_transform(transform_config):
     return rand_transform
 
 
+
+def poisson_spike_train(x, length: int):
+    # https://neuron.yale.edu/neuron/static/docs/neuronpython/spikeplot.html
+
+    length = length[0]
+    r = 1.0 - x
+
+    dts = np.random.poisson(r * length, length) + 1 # r number of events per unit of time (length)
+    spike_indices = np.cumsum(dts)
+    spike_indices = spike_indices[spike_indices < length]
+
+    spike_train = np.zeros((length,), dtype=np.float32)
+    spike_train[spike_indices] = 1
+
+    return spike_train
+
+
 class TorchvisionDataset_Poisson_Spike(Dataset):
-    """mnist dataset
+    """poisson dataset
 
     torchvision_mnist: dataset object
     length: number of steps of snn
@@ -48,6 +66,13 @@ class TorchvisionDataset_Poisson_Spike(Dataset):
         self.flatten = flatten
         self.length = length
         self.max_rate = max_rate
+
+        self.rng = np.random.default_rng()
+
+        self.v_poisson_spike_train = np.vectorize(
+            poisson_spike_train,
+            signature=f'(),(1)->({self.length})'
+        )
 
     def __len__(self):
         return len(self.dataset)
@@ -67,14 +92,8 @@ class TorchvisionDataset_Poisson_Spike(Dataset):
         #flatten image
         img = img.reshape(-1)
 
-        # shape of spike_trains [h*w, length]
-        spike_trains = np.zeros((len(img), self.length), dtype=np.float32)
-
         #extend last dimension for time, repeat image along the last dimension
-        img_tile = np.expand_dims(img,1)
-        img_tile = np.tile(img_tile, (1,self.length))
-        rand = np.random.uniform(0,1,(len(img), self.length))
-        spike_trains[np.where(img_tile > rand)] = 1
+        spike_trains = self.v_poisson_spike_train(img, [self.length])
 
         if self.flatten == False:
             spike_trains = spike_trains.reshape([shape[0], shape[1], self.length])
