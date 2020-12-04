@@ -14,29 +14,27 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python ann_snn.py \
-            --model networks.cnn_networks.baseline_snn \
-            --config_file ann_snn_cnn.yaml \
+        python pretrained_model.py \
+            --model networks.fixed_cnn_networks.pretrained_model \
+            --config_file fixedann_snn_cnn.yaml \
             --train \
             --logging && \
-        python ann_snn.py \
-            --model networks.cnn_networks.ann1_snn7 \
-            --config_file ann_snn_cnn.yaml \
+        python fixedann_snn.py \
+            --model networks.fixed_cnn_networks.ann1_snn7 \
+            --pretrained_model networks.fixed_cnn_networks.pretrained_model \
+            --config_file fixedann_snn_cnn.yaml \
             --train \
             --logging && \
-        python ann_snn.py \
-            --model networks.cnn_networks.ann4_snn4 \
-            --config_file ann_snn_cnn.yaml \
+        python fixedann_snn.py \
+            --model networks.fixed_cnn_networks.ann4_snn4 \
+            --pretrained_model networks.fixed_cnn_networks.pretrained_model \
+            --config_file fixedann_snn_cnn.yaml \
             --train \
             --logging && \
-        python ann_snn.py \
-            --model networks.cnn_networks.ann6_snn2 \
-            --config_file ann_snn_cnn.yaml \
-            --train \
-            --logging && \
-        python ann_snn.py \
-            --model networks.cnn_networks.baseline_ann \
-            --config_file ann_snn_cnn.yaml \
+        python fixedann_snn.py \
+            --model networks.fixed_cnn_networks.ann6_snn2 \
+            --pretrained_model networks.fixed_cnn_networks.pretrained_model \
+            --config_file fixedann_snn_cnn.yaml \
             --train \
             --logging \
     "
