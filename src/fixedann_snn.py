@@ -79,7 +79,6 @@ else:
 logger.info(args)
 
 conf = OmegaConf.load(args.config_file)
-logger.debug(conf)
 
 torch.manual_seed(conf['pytorch_seed'])
 np.random.seed(conf['pytorch_seed'])

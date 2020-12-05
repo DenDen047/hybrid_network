@@ -92,8 +92,14 @@ class TorchvisionDataset_Poisson_Spike(Dataset):
         #flatten image
         img = img.reshape(-1)
 
+        # shape of spike_trains [h*w, length]
+        spike_trains = np.zeros((len(img), self.length), dtype=np.float32)
+
         #extend last dimension for time, repeat image along the last dimension
-        spike_trains = self.v_poisson_spike_train(img, [self.length])
+        img_tile = np.expand_dims(img,1)
+        img_tile = np.tile(img_tile, (1,self.length))
+        rand = np.random.uniform(0,1,(len(img), self.length))
+        spike_trains[np.where(img_tile > rand)] = 1
 
         if self.flatten == False:
             spike_trains = spike_trains.reshape([shape[0], shape[1], self.length])
