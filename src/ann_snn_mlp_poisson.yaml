@@ -104,7 +104,7 @@ test_checkpoint_path:
   /checkpoint/ann_snn_mlp_poisson_1
 
 pretrained_ann_path:
-  /checkpoint/best_ann_snn_mlp_poisson_1
+  /checkpoint/best_fixedann_snn_mlp_1
 
 acc_file_name:
   'ann_snn_mlp_poisson-accuracy.csv'

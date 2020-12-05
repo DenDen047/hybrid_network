@@ -13,6 +13,7 @@ import numpy as np
 from torchvision import transforms, utils
 import torch
 from pprint import pprint
+from tqdm import tqdm
 
 
 def get_rand_transform(transform_config):
@@ -155,3 +156,75 @@ class TorchvisionDataset(Dataset):
             img = img.reshape(-1)
 
         return img, self.dataset[idx][1]
+
+
+class FeatureDataset(object):
+    def __init__(
+        self,
+        torchvision_dataset: Any,
+        feature_extractor: Any,
+        target_module: Any,
+        device: Any,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        activation: Optional[Callable] = None,
+    ):
+        self.torchvision_dataset = torchvision_dataset
+        self.feature_extractor = feature_extractor
+        self.target_module = target_module
+        self.transform = transform
+        self.target_transform = target_transform
+        self.device = device
+        self.activation = activation
+
+        self._generate_features()
+
+    def _generate_features(self) -> None:
+        self.data = []
+        self.targets = []
+
+        intermediate_info = {}
+        def get_feature(name):
+            def hook(model, input, output):
+                intermediate_info[name] = output.detach()
+            return hook
+
+        self.target_module.register_forward_hook(get_feature('feature'))
+
+        self.feature_extractor.eval()
+        with torch.no_grad():
+            for vector, target in tqdm(self.torchvision_dataset):
+                if self.transform is not None:
+                    vector = self.transform(vector)
+
+                vector = torch.from_numpy(vector).unsqueeze(0).to(self.device)
+                self.feature_extractor(vector)
+
+                feature = torch.squeeze(intermediate_info['feature'])
+                feature = feature if self.activation is None else self.activation(feature)
+                self.data.append(feature.to(self.device))
+                self.targets.append(target)
+
+        # remove needless variables
+        del self.feature_extractor
+
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
+        data, target = self.data[index], self.targets[index]
+
+        if self.transform is not None:
+            data = self.transform(data)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return data, target
+
+    def __len__(self) -> int:
+        return len(self.data)

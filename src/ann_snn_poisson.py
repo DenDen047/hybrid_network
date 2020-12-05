@@ -47,6 +47,7 @@ else:
 # arg parser
 parser = argparse.ArgumentParser(description='ann and snn with poisson coding')
 parser.add_argument('--model', type=str, help='model')
+parser.add_argument('--pretrained_model', default=None, type=str, help='model')
 parser.add_argument('--config_file', type=str, help='path to configuration file')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
@@ -85,6 +86,7 @@ save_checkpoint = conf['save_checkpoint']
 checkpoint_base_name = conf['checkpoint_base_name']
 checkpoint_base_path = conf['checkpoint_base_path']
 test_checkpoint_path = conf['test_checkpoint_path']
+pretrained_ann_path = conf['pretrained_ann_path']
 
 # %% training parameters
 hyperparam_conf = conf['hyperparameters']
@@ -225,12 +227,44 @@ if __name__ == "__main__":
     optimizer = get_optimizer(params, conf)
     scheduler = get_scheduler(optimizer, conf)
 
+    # load the feature extractor
+    feature_extractor = eval(args.pretrained_model)(
+        (in_channels, size_h, size_w),
+        n_class,
+        batch_size,
+        train_bias,
+    ).to(device)
+    pretrained_ann_checkpoint = torch.load(pretrained_ann_path)
+    feature_extractor.load_state_dict(pretrained_ann_checkpoint["model_state_dict"])
+
     # load dataset
     train_set, val_set, test_set = utils.load_dataset(
         dataset_name=dataset_name,
         transform=get_rand_transform(conf['transform'])
     )
 
+    # extract features
+    if args.pretrained_model is not None:
+        train_set = FeatureDataset(
+            TorchvisionDataset(train_set, max_rate=1, length=length, flatten=flatten),
+            feature_extractor,
+            eval(f'feature_extractor.{model.feature_module}'),
+            activation=torch.sigmoid
+        )
+        val_set = FeatureDataset(
+            TorchvisionDataset(val_set, max_rate=1, length=length, flatten=flatten),
+            feature_extractor,
+            eval(f'feature_extractor.{model.feature_module}'),
+            activation=torch.sigmoid
+        )
+        test_set = FeatureDataset(
+            TorchvisionDataset(test_set, max_rate=1, length=length, flatten=flatten),
+            feature_extractor,
+            eval(f'feature_extractor.{model.feature_module}'),
+            activation=torch.sigmoid
+        )
+
+    # make dataloders
     train_dataloader = DataLoader(
         TorchvisionDataset_Poisson_Spike(train_set, max_rate=1, length=length, flatten=flatten),
         batch_size=batch_size,
