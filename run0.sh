@@ -14,10 +14,10 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python ann_snn_poisson.py \
-            --model networks.fixed_mlp_networks.ann2_snn1 \
-            --pretrained_model networks.fixed_mlp_networks.pretrained_model \
-            --config_file ann_snn_mlp_poisson.yaml \
+        python fixedann_snn.py \
+            --model networks.fixed_cnn_networks.ann6_snn2 \
+            --pretrained_model networks.fixed_cnn_networks.pretrained_model \
+            --config_file fixedann_snn_cnn.yaml \
             --train \
             --logging \
     "
