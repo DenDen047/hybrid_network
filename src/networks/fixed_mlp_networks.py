@@ -119,10 +119,6 @@ class ann1_snn2(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
-        print(np.max(inputs))
-        print(np.min(inputs))
-        import sys; sys.exit(1)
-
         if self.input_type == 'image':
             # ann
             ann_out = self.sigm(inputs)
@@ -151,6 +147,7 @@ class ann2_snn1(torch.nn.Module):
         membrane_filter: bool,
         tau_m: int,
         tau_s: int,
+        input_type: str = 'image',
     ):
         super().__init__()
 
@@ -163,6 +160,7 @@ class ann2_snn1(torch.nn.Module):
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
         self.membrane_filter = membrane_filter
+        self.input_type = input_type
 
         self.axon3 = dual_exp_iir_layer((500,), self.length, self.batch_size, tau_m, tau_s, train_coefficients)
         self.snn3 = neuron_layer(500, 10, self.length, self.batch_size, tau_m, self.train_bias, self.membrane_filter)
@@ -177,10 +175,12 @@ class ann2_snn1(torch.nn.Module):
         snn3_states = self.snn3.create_init_states()
 
         # ann
-        ann_out = self.sigm(inputs)
-
-        # converting
-        coding_out = utils.expand_along_time(ann_out, length=self.length)
+        if self.input_type == 'image':
+            # converting
+            ann_out = self.sigm(inputs)
+            coding_out = utils.expand_along_time(ann_out, length=self.length)
+        elif self.input_type == 'spike':
+            coding_out = inputs
 
         # snn
         axon3_out, axon3_states = self.axon3(coding_out, axon3_states)
