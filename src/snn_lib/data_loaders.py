@@ -14,6 +14,7 @@ from torchvision import transforms, utils
 import torch
 from pprint import pprint
 from tqdm import tqdm
+from typing import Any, Callable, Optional, Tuple
 
 
 def get_rand_transform(transform_config):
@@ -202,7 +203,7 @@ class FeatureDataset(object):
 
                 feature = torch.squeeze(intermediate_info['feature'])
                 feature = feature if self.activation is None else self.activation(feature)
-                self.data.append(feature.to(self.device))
+                self.data.append(feature.to(torch.device('cpu')))
                 self.targets.append(target)
 
         # remove needless variables

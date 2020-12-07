@@ -119,6 +119,10 @@ class ann1_snn2(torch.nn.Module):
         axon3_states = self.axon3.create_init_states()
         snn3_states = self.snn3.create_init_states()
 
+        print(np.max(inputs))
+        print(np.min(inputs))
+        import sys; sys.exit(1)
+
         if self.input_type == 'image':
             # ann
             ann_out = self.sigm(inputs)

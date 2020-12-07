@@ -119,88 +119,6 @@ flatten = in_channels == 0
 acc_file_name = experiment_name + '_' + conf['acc_file_name']
 
 
-########################### train function ###################################
-def train(model, optimizer, scheduler, train_data_loader, writer=None):
-    eval_image_number = 0
-    correct_total = 0
-    wrong_total = 0
-
-    criterion = torch.nn.CrossEntropyLoss()
-
-    model.train()
-
-    for i_batch, sample_batched in enumerate(train_data_loader):
-
-        x_train = sample_batched[0].to(device)
-        target = sample_batched[1].to(device)
-        out_spike = model(x_train)
-
-        spike_count = torch.sum(out_spike, dim=2)
-
-        model.zero_grad()
-        loss = criterion(spike_count, target.long())
-        loss.backward()
-        optimizer.step()
-
-        # calculate acc
-        _, idx = torch.max(spike_count, dim=1)
-
-        eval_image_number += len(sample_batched[1])
-        wrong = len(torch.where(idx != target)[0])
-
-        correct = len(sample_batched[1]) - wrong
-        wrong_total += len(torch.where(idx != target)[0])
-        correct_total += correct
-        acc = correct_total / eval_image_number
-
-        # scheduler step
-        if isinstance(scheduler, torch.optim.lr_scheduler.CyclicLR):
-            scheduler.step()
-
-    # scheduler step
-    if isinstance(scheduler, torch.optim.lr_scheduler.MultiStepLR):
-        scheduler.step()
-
-    acc = correct_total / eval_image_number
-
-    return acc, loss
-
-
-def test(model, test_data_loader, writer=None):
-    eval_image_number = 0
-    correct_total = 0
-    wrong_total = 0
-
-    model.eval()
-
-    criterion = torch.nn.CrossEntropyLoss()
-
-    for i_batch, sample_batched in enumerate(test_data_loader):
-
-        x_test = sample_batched[0].to(device)
-        target = sample_batched[1].to(device)
-        out_spike = model(x_test)
-
-        spike_count = torch.sum(out_spike, dim=2)
-
-        loss = criterion(spike_count, target.long())
-
-        # calculate acc
-        _, idx = torch.max(spike_count, dim=1)
-
-        eval_image_number += len(sample_batched[1])
-        wrong = len(torch.where(idx != target)[0])
-
-        correct = len(sample_batched[1]) - wrong
-        wrong_total += len(torch.where(idx != target)[0])
-        correct_total += correct
-        acc = correct_total / eval_image_number
-
-    acc = correct_total / eval_image_number
-
-    return acc, loss
-
-
 if __name__ == "__main__":
     logger.debug(conf)
     logger.debug(args)
@@ -249,18 +167,21 @@ if __name__ == "__main__":
             TorchvisionDataset(train_set, max_rate=1, length=length, flatten=flatten),
             feature_extractor,
             eval(f'feature_extractor.{model.feature_module}'),
+            device=device,
             activation=torch.sigmoid
         )
         val_set = FeatureDataset(
             TorchvisionDataset(val_set, max_rate=1, length=length, flatten=flatten),
             feature_extractor,
             eval(f'feature_extractor.{model.feature_module}'),
+            device=device,
             activation=torch.sigmoid
         )
         test_set = FeatureDataset(
             TorchvisionDataset(test_set, max_rate=1, length=length, flatten=flatten),
             feature_extractor,
             eval(f'feature_extractor.{model.feature_module}'),
+            device=device,
             activation=torch.sigmoid
         )
 

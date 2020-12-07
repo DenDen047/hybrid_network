@@ -90,6 +90,8 @@ dataset_config:
     1
   use_transform:
     True
+  n_class:
+    10
 
 # configs for saving checkpoint
 save_checkpoint:
@@ -104,7 +106,7 @@ test_checkpoint_path:
   /checkpoint/ann_snn_mlp_poisson_1
 
 pretrained_ann_path:
-  /checkpoint/best_fixedann_snn_mlp_1
+  /checkpoint/best_fixedann_snn_mlp_poisson_1
 
 acc_file_name:
   'ann_snn_mlp_poisson-accuracy.csv'
