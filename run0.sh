@@ -14,10 +14,9 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python fixedann_snn.py \
-            --model networks.fixed_cnn_networks.ann6_snn2 \
-            --pretrained_model networks.fixed_cnn_networks.pretrained_model \
-            --config_file fixedann_snn_cnn.yaml \
+        python ann_snn_coding.py \
+            --model networks.cnn_networks_coding.ann6_coding_snn2 \
+            --config_file ann_snn_cnn_coding.yaml \
             --train \
             --logging \
     "
