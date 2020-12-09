@@ -18,5 +18,10 @@ docker run -it --rm \
             --model networks.cnn_networks_coding.ann4_coding_snn4 \
             --config_file ann_snn_cnn_coding.yaml \
             --train \
+            --logging && \
+        python ann_snn_coding.py \
+            --model networks.cnn_networks_coding.ann6_coding_snn2 \
+            --config_file ann_snn_cnn_coding.yaml \
+            --train \
             --logging \
     "
