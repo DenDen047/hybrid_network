@@ -103,8 +103,8 @@ class TorchvisionDataset_Poisson_Spike(Dataset):
         rand = np.random.uniform(0,1,(len(img), self.length))
         spike_trains[np.where(img_tile > rand)] = 1
 
-        if self.flatten == False:
-            spike_trains = spike_trains.reshape([shape[0], shape[1], self.length])
+        if not self.flatten:
+            spike_trains = spike_trains.reshape(list(shape) + [self.length])
 
         return spike_trains, self.dataset[idx][1]
 
