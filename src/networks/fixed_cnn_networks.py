@@ -378,6 +378,7 @@ class ann4_snn4(torch.nn.Module):
         membrane_filter: bool,
         tau_m: int,
         tau_s: int,
+        input_type: str = 'image',
     ):
         super().__init__()
 
@@ -391,6 +392,7 @@ class ann4_snn4(torch.nn.Module):
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
         self.membrane_filter = membrane_filter
+        self.input_type = input_type
 
         self.feature_module = 'ann4'
         self.sigm = nn.Sigmoid()
@@ -454,10 +456,12 @@ class ann4_snn4(torch.nn.Module):
         snn8_states = self.snn8.create_init_states()
 
         # ann
-        ann_out = self.sigm(inputs)
-
-        # converting
-        coding_out = utils.expand_along_time(ann_out, length=self.length)
+        if self.input_type == 'image':
+            # converting
+            ann_out = self.sigm(inputs)
+            coding_out = utils.expand_along_time(ann_out, length=self.length)
+        elif self.input_type == 'spike':
+            coding_out = inputs
 
         # snn
         axon5_out, axon5_states = self.axon5(coding_out, axon5_states)
