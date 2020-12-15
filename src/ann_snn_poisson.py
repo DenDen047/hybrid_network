@@ -34,6 +34,7 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
+import networks.cnn_networks
 import networks.fixed_mlp_networks
 import networks.fixed_cnn_networks
 import utils
@@ -145,24 +146,24 @@ if __name__ == "__main__":
     optimizer = get_optimizer(params, conf)
     scheduler = get_scheduler(optimizer, conf)
 
-    # load the feature extractor
-    feature_extractor = eval(args.pretrained_model)(
-        (in_channels, size_h, size_w),
-        n_class,
-        batch_size,
-        train_bias,
-    ).to(device)
-    pretrained_ann_checkpoint = torch.load(pretrained_ann_path)
-    feature_extractor.load_state_dict(pretrained_ann_checkpoint["model_state_dict"])
-
     # load dataset
     train_set, val_set, test_set = utils.load_dataset(
         dataset_name=dataset_name,
         transform=get_rand_transform(conf['transform'])
     )
 
-    # extract features
     if args.pretrained_model is not None:
+        # load the feature extractor
+        feature_extractor = eval(args.pretrained_model)(
+            (in_channels, size_h, size_w),
+            n_class,
+            batch_size,
+            train_bias,
+        ).to(device)
+        pretrained_ann_checkpoint = torch.load(pretrained_ann_path)
+        feature_extractor.load_state_dict(pretrained_ann_checkpoint["model_state_dict"])
+
+        # extract features
         train_set = FeatureDataset(
             TorchvisionDataset(train_set, max_rate=1, length=length, flatten=flatten),
             feature_extractor,

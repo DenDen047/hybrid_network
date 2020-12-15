@@ -15,14 +15,16 @@ from . import utils
 
 class baseline_snn(torch.nn.Module):
     def __init__(self,
+        in_channels, size_h, size_w,
         batch_size: int,
+        n_class: int,
         length: int,
-        in_channels: int,
         train_coefficients: bool,
         train_bias: bool,
         membrane_filter: bool,
         tau_m: int,
         tau_s: int,
+        input_type: str = 'image',
     ):
         super().__init__()
 
@@ -33,6 +35,7 @@ class baseline_snn(torch.nn.Module):
         self.train_coefficients = train_coefficients
         self.train_bias = train_bias
         self.membrane_filter = membrane_filter
+        self.input_type = input_type
 
         self.axon1 = dual_exp_iir_layer(
             (in_channels, 32, 32),
@@ -152,7 +155,11 @@ class baseline_snn(torch.nn.Module):
         snn8_states = self.snn8.create_init_states()
 
         # converting
-        coding_out = utils.expand_along_time(inputs, length=self.length)
+        if self.input_type == 'image':
+            # converting
+            coding_out = utils.expand_along_time(inputs, length=self.length)
+        elif self.input_type == 'spike':
+            coding_out = inputs.permute(0, 3, 1, 2, 4)
 
         # snn
         axon1_out, axon1_states = self.axon1(coding_out, axon1_states)
