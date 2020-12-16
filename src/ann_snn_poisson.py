@@ -37,6 +37,7 @@ from omegaconf import OmegaConf
 import networks.cnn_networks
 import networks.fixed_mlp_networks
 import networks.fixed_cnn_networks
+import networks.fixed_mlp_poisson_networks
 import utils
 
 
@@ -168,22 +169,19 @@ if __name__ == "__main__":
             TorchvisionDataset(train_set, max_rate=1, length=length, flatten=flatten),
             feature_extractor,
             eval(f'feature_extractor.{model.feature_module}'),
-            device=device,
-            activation=torch.sigmoid
+            device=device
         )
         val_set = FeatureDataset(
             TorchvisionDataset(val_set, max_rate=1, length=length, flatten=flatten),
             feature_extractor,
             eval(f'feature_extractor.{model.feature_module}'),
-            device=device,
-            activation=torch.sigmoid
+            device=device
         )
         test_set = FeatureDataset(
             TorchvisionDataset(test_set, max_rate=1, length=length, flatten=flatten),
             feature_extractor,
             eval(f'feature_extractor.{model.feature_module}'),
-            device=device,
-            activation=torch.sigmoid
+            device=device
         )
 
     # make dataloders
