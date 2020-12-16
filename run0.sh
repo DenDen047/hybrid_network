@@ -15,7 +15,7 @@ docker run -it --rm \
     ${IMAGE_NAME} \
     /bin/bash -c "\
         python ann_snn_poisson.py \
-            --model networks.fixed_mlp_poisson_networks.ann2_snn1 \
+            --model networks.fixed_mlp_poisson_networks.ann1_snn2 \
             --pretrained_model networks.fixed_mlp_poisson_networks.pretrained_model \
             --config_file ann_snn_mlp_poisson.yaml \
             --train \
