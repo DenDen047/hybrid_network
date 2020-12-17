@@ -38,6 +38,7 @@ import networks.cnn_networks
 import networks.fixed_mlp_networks
 import networks.fixed_cnn_networks
 import networks.fixed_mlp_poisson_networks
+import networks.fixed_cnn_poisson_networks
 import utils
 
 
