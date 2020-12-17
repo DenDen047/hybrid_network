@@ -25,11 +25,5 @@ docker run -it --rm \
             --pretrained_model networks.fixed_cnn_poisson_networks.pretrained_model \
             --config_file ann_snn_cnn_poisson.yaml \
             --train \
-            --logging && \
-        python ann_snn_poisson.py \
-            --model networks.fixed_cnn_poisson_networks.ann1_snn7 \
-            --pretrained_model networks.fixed_cnn_poisson_networks.pretrained_model \
-            --config_file ann_snn_cnn_poisson.yaml \
-            --train \
             --logging \
     "
