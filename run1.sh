@@ -14,16 +14,39 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python ann_snn_poisson.py \
-            --model networks.fixed_cnn_poisson_networks.ann6_snn2 \
-            --pretrained_model networks.fixed_cnn_poisson_networks.pretrained_model \
-            --config_file ann_snn_cnn_poisson.yaml \
+        python ann_snn.py \
+            --model networks.mlp_networks.baseline_snn \
+            --rand_seed 2 \
+            --without_reset \
+            --config_file ann_snn_mlp.yaml \
             --train \
             --logging && \
-        python ann_snn_poisson.py \
-            --model networks.fixed_cnn_poisson_networks.ann4_snn4 \
-            --pretrained_model networks.fixed_cnn_poisson_networks.pretrained_model \
-            --config_file ann_snn_cnn_poisson.yaml \
+        python ann_snn.py \
+            --model networks.mlp_networks.baseline_snn \
+            --rand_seed 3 \
+            --without_reset \
+            --config_file ann_snn_mlp.yaml \
+            --train \
+            --logging && \
+        python ann_snn.py \
+            --model networks.mlp_networks.baseline_snn \
+            --rand_seed 4 \
+            --without_reset \
+            --config_file ann_snn_mlp.yaml \
+            --train \
+            --logging && \
+        python ann_snn.py \
+            --model networks.mlp_networks.baseline_snn \
+            --rand_seed 5 \
+            --without_reset \
+            --config_file ann_snn_mlp.yaml \
+            --train \
+            --logging && \
+        python ann_snn.py \
+            --model networks.mlp_networks.baseline_snn \
+            --rand_seed 6 \
+            --without_reset \
+            --config_file ann_snn_mlp.yaml \
             --train \
             --logging \
     "
