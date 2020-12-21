@@ -1,17 +1,9 @@
 # hybrid_network
 
-## Files
+## Usage
 
-### train/val/test dataset
-
-- [x] ann_snn.py
-    - [x] ann_snn_mlp.py
-    - [x] ann_snn_cnn.py
-- [x] pretrained_model.py
-- [x] fixedann_snnp.py
-    - [x] fixedann_snn_mlp.py
-    - [x] fixedann_snn_cnn.py
-- [x] ann_snn_coding.py
-    - [x] ann_snn_mlp_coding.py
-    - [x] ann_snn_cnn_coding.py
+```sh
+$ ./run0.sh
+$ ./run1.sh
+```
 
