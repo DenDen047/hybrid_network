@@ -1,0 +1,11 @@
+matplotlib
+scipy
+h5py
+pandas
+tqdm
+scikit-learn
+numpy==1.19.0
+omegaconf==1.4.1
+tensorboard
+future
+torch_optimizer
