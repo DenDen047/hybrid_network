@@ -14,34 +14,10 @@ docker run -it --rm \
     -w /workdir \
     ${IMAGE_NAME} \
     /bin/bash -c "\
-        python ann_snn.py \
-            --model networks.mlp_networks.baseline_snn \
-            --rand_seed 2 \
-            --config_file ann_snn_mlp.yaml \
-            --train \
-            --logging && \
-        python ann_snn.py \
-            --model networks.mlp_networks.baseline_snn \
-            --rand_seed 3 \
-            --config_file ann_snn_mlp.yaml \
-            --train \
-            --logging && \
-        python ann_snn.py \
-            --model networks.mlp_networks.baseline_snn \
-            --rand_seed 4 \
-            --config_file ann_snn_mlp.yaml \
-            --train \
-            --logging && \
-        python ann_snn.py \
-            --model networks.mlp_networks.baseline_snn \
-            --rand_seed 5 \
-            --config_file ann_snn_mlp.yaml \
-            --train \
-            --logging && \
-        python ann_snn.py \
-            --model networks.mlp_networks.baseline_snn \
-            --rand_seed 6 \
-            --config_file ann_snn_mlp.yaml \
+        python pretrained_model.py \
+            --model networks.fixed_cnn_poisson_networks.pretrained_model \
+            --config_file ann_snn_cnn_poisson.yaml \
+            --rand_seed 0 \
             --train \
             --logging \
     "

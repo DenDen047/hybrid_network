@@ -36,6 +36,8 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
+import networks.mlp_networks
+import networks.cnn_networks
 import networks.fixed_mlp_networks
 import networks.fixed_cnn_networks
 import networks.fixed_mlp_poisson_networks
@@ -52,6 +54,7 @@ else:
 parser = argparse.ArgumentParser(description='Generating pretrained model of ANN')
 parser.add_argument('--model', type=str, help='model')
 parser.add_argument('--config_file', type=str, help='path to configuration file')
+parser.add_argument('--rand_seed', type=int, default=42, help='the seed of random functions')
 parser.add_argument('--train', action='store_true', help='train model')
 parser.add_argument('--test', action='store_true', help='test model')
 parser.add_argument('--logging', action='store_true', default=True, help='if true, output the all image/pdf files during the process')
@@ -80,8 +83,8 @@ else:
 conf = OmegaConf.load(args.config_file)
 logger.debug(conf)
 
-torch.manual_seed(conf['pytorch_seed'])
-np.random.seed(conf['pytorch_seed'])
+torch.manual_seed(args.rand_seed)
+np.random.seed(args.rand_seed)
 
 experiment_name = conf['experiment_name']
 
