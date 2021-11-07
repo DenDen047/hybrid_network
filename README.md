@@ -1,6 +1,8 @@
 # Hybrid Network
 
-This open-source project, referred to as **PTRanking** (Learning to Rank in PyTorch) aims to provide scalable and extendable implementations of typical learning-to-rank methods based on PyTorch. On one hand, this project enables a uniform comparison over several benchmark datasets leading to an in-depth understanding of previous learning-to-rank methods. On the other hand, this project makes it easy to develop and incorporate newly proposed models, so as to expand the territory of techniques on learning-to-rank.
+This open-source project, referred to as **HybridNetwork** aims to provide the scalable and extendable implementations of combining a spiking neural network (SNN) and an artificial neural network (ANN).
+On one hand, this project enables a uniform workflow over SNNs, ANNs and cording layers leading to an in-depth understanding of the combination of SNN and ANN.
+On the other hand, this project makes it easy to develop and incorporate newly proposed models, so as to expand the territory of techniques on hybrid network.
 
 **Key Features**:
 
