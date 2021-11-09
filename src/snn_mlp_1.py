@@ -30,6 +30,8 @@ import snn_lib.utilities
 import omegaconf
 from omegaconf import OmegaConf
 
+import utils
+
 
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
@@ -42,10 +44,8 @@ parser.add_argument('--config_file', type=str, default='snn_mlp_1.yaml',
                     help='path to configuration file')
 parser.add_argument('--train', action='store_true',
                     help='train model')
-
 parser.add_argument('--test', action='store_true',
                     help='test model')
-
 args = parser.parse_args()
 
 # %% config file
@@ -240,6 +240,7 @@ def test(model, test_data_loader, writer=None):
     acc = correct_total / eval_image_number
 
     return acc, loss
+
 
 if __name__ == "__main__":
 

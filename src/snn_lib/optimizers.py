@@ -25,10 +25,9 @@ def get_optimizer(params, conf):
         print('optimizer:', optimizer_conf['optimizer_choice'], 'lr:', lr)
         return torch.optim.AdamW(params, lr)
     elif optimizer_choice == 'SGD':
-        lr = lr = optimizer_conf['SGD']['lr']
+        lr = optimizer_conf['SGD']['lr']
         print('optimizer:', optimizer_conf['optimizer_choice'], 'lr:', lr)
         return torch.optim.SGD(params, lr)
     else:
         raise Exception('optimizer', optimizer_conf['optimizer_choice'] ,'not implemented.')
-    
-    
+

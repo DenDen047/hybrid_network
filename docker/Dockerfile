@@ -17,6 +17,7 @@ RUN pip install -r requirements.txt
 
 # torch
 RUN pip install torchsummary
+RUN pip install torch_optimizer
 
 # clearn
 RUN rm -rf /var/lib/apt/lists/*

@@ -2,9 +2,6 @@
 experiment_name:
   ann_snn_mlp
 
-pytorch_seed:
-  2
-
 hyperparameters:
   # default parameters
   length:
@@ -104,5 +101,5 @@ test_checkpoint_path:
   /checkpoint/pretrained_ann_snn_mlp
 
 acc_file_name:
-  'ann_snn_mlp-accuracy.csv'
+  'accuracy.csv'
 
