@@ -244,8 +244,6 @@ def confusion_matrix(
         labels = target.data.cpu().numpy()
         y_true.extend(labels) # Save Truth
 
-        eval_image_number += len(sample_batched[1])
-
     # constant for classes
     if class_mode == 'CIFAR10':
         classes = ('airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -259,6 +257,6 @@ def confusion_matrix(
         index=[i for i in classes],
         columns=[i for i in classes]
     )
-    plt.figure(figsize = (12,7))
+    plt.figure(figsize=(12,7))
     sn.heatmap(df_cm, annot=True)
     plt.savefig(output_fpath)
