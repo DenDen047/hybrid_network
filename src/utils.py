@@ -258,5 +258,8 @@ def confusion_matrix(
         columns=[i for i in classes]
     )
     plt.figure(figsize=(12,7))
-    sn.heatmap(df_cm, annot=True)
+    sn.heatmap(df_cm, annot=True, cmap='coolwarm')
+    plt.xlabel("Predicted Class")
+    plt.ylabel("True Class")
+    plt.tight_layout()
     plt.savefig(output_fpath)
