@@ -5,6 +5,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets
 from sklearn.metrics import confusion_matrix
 import seaborn as sn
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from snn_lib.data_loaders import get_rand_transform
 from snn_lib.data_loaders import TorchvisionDataset
@@ -215,17 +217,15 @@ def confusion_matrix(
     model,
     test_data_loader,
     device=torch.device('cpu'),
-    writer=None,
-    mode: str = 'spike'
+    class_mode='CIFAR10',
+    mode: str = 'spike',
+    output_fpath: str = 'confusion_matrix.pdf'
 ):
     model.eval()
 
     y_pred = []
     y_true = []
-
-
     for i_batch, sample_batched in enumerate(test_data_loader):
-
         x_test = sample_batched[0].to(device)
         target = sample_batched[1].to(device)
         out_spike = model(x_test)
@@ -235,15 +235,22 @@ def confusion_matrix(
         elif mode == 'continue':
             spike_count = out_spike
 
-        output = (torch.max(torch.exp(output), 1)[1]).data.cpu().numpy()
+        # calculate acc
+        _, indices = torch.max(spike_count, dim=1)
+
+        output = indices.data.cpu().numpy()
         y_pred.extend(output) # Save Prediction
 
-        labels = labels.data.cpu().numpy()
+        labels = target.data.cpu().numpy()
         y_true.extend(labels) # Save Truth
 
+        eval_image_number += len(sample_batched[1])
+
     # constant for classes
-    classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
-            'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
+    if class_mode == 'CIFAR10':
+        classes = ('airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    elif class_mode == 'MNIST':
+        classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
     # Build confusion matrix
     cf_matrix = confusion_matrix(y_true, y_pred)
@@ -254,3 +261,4 @@ def confusion_matrix(
     )
     plt.figure(figsize = (12,7))
     sn.heatmap(df_cm, annot=True)
+    plt.savefig(output_fpath)

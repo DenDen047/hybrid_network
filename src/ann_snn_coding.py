@@ -213,6 +213,13 @@ if __name__ == "__main__":
 
         test_acc, test_loss = utils.evaluate(model, test_dataloader, device)
 
+        # confusion matrix
+        utils.confusion_matrix(
+            model, test_dataloader, device,
+            class_mode='CIFAR10',
+            output_fpath=os.path.join(writer_log_dir, 'confusion_matrix.pdf')
+        )
+
         # show summary
         logger.info('Summary:')
         logger.info('Best train acc: {}, epoch: {}'.format(best_train_acc, best_train_epoch))
