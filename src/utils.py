@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Tuple, List
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets
-from sklearn.metrics import confusion_matrix
+import sklearn
 import seaborn as sn
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -251,7 +251,7 @@ def confusion_matrix(
         classes = ('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 
     # Build confusion matrix
-    cf_matrix = confusion_matrix(y_true, y_pred)
+    cf_matrix = sklearn.metrics.confusion_matrix(y_true, y_pred)
     df_cm = pd.DataFrame(
         cf_matrix / np.sum(cf_matrix) *10,
         index=[i for i in classes],
