@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Tuple, List
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets
-import sklearn
+import sklearn.metrics
 import seaborn as sn
 import pandas as pd
 import matplotlib.pyplot as plt
