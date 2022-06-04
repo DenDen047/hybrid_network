@@ -3,6 +3,8 @@ from typing import Any, Callable, Optional, Tuple, List
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets
+from sklearn.metrics import confusion_matrix
+import seaborn as sn
 
 from snn_lib.data_loaders import get_rand_transform
 from snn_lib.data_loaders import TorchvisionDataset
@@ -113,6 +115,7 @@ def train(
 ):
     eval_image_number = 0
     correct_total = 0
+    loss_total = 0
     wrong_total = 0
 
     criterion = torch.nn.CrossEntropyLoss()
@@ -132,6 +135,7 @@ def train(
 
         model.zero_grad()
         loss = criterion(spike_count, target.long())
+        loss_total += loss.data.cpu().numpy()
         loss.backward()
         optimizer.step()
 
@@ -155,6 +159,7 @@ def train(
         scheduler.step()
 
     acc = correct_total / eval_image_number
+    loss = loss_total / eval_image_number
 
     return acc, loss
 
@@ -168,6 +173,7 @@ def evaluate(
 ):
     eval_image_number = 0
     correct_total = 0
+    loss_total = 0
     wrong_total = 0
 
     model.eval()
@@ -185,8 +191,9 @@ def evaluate(
         elif mode == 'continue':
             spike_count = out_spike
 
+        # calculate loss
         loss = criterion(spike_count, target.long())
-
+        loss_total += loss.data.cpu().numpy()
         # calculate acc
         _, idx = torch.max(spike_count, dim=1)
 
@@ -199,5 +206,51 @@ def evaluate(
         acc = correct_total / eval_image_number
 
     acc = correct_total / eval_image_number
+    loss = loss_total / eval_image_number
 
     return acc, loss
+
+
+def confusion_matrix(
+    model,
+    test_data_loader,
+    device=torch.device('cpu'),
+    writer=None,
+    mode: str = 'spike'
+):
+    model.eval()
+
+    y_pred = []
+    y_true = []
+
+
+    for i_batch, sample_batched in enumerate(test_data_loader):
+
+        x_test = sample_batched[0].to(device)
+        target = sample_batched[1].to(device)
+        out_spike = model(x_test)
+
+        if mode == 'spike':
+            spike_count = torch.sum(out_spike, dim=2)
+        elif mode == 'continue':
+            spike_count = out_spike
+
+        output = (torch.max(torch.exp(output), 1)[1]).data.cpu().numpy()
+        y_pred.extend(output) # Save Prediction
+
+        labels = labels.data.cpu().numpy()
+        y_true.extend(labels) # Save Truth
+
+    # constant for classes
+    classes = ('T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+            'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle Boot')
+
+    # Build confusion matrix
+    cf_matrix = confusion_matrix(y_true, y_pred)
+    df_cm = pd.DataFrame(
+        cf_matrix / np.sum(cf_matrix) *10,
+        index=[i for i in classes],
+        columns=[i for i in classes]
+    )
+    plt.figure(figsize = (12,7))
+    sn.heatmap(df_cm, annot=True)
