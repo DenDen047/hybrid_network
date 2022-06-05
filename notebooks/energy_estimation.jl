@@ -26,9 +26,9 @@ U(N, T) = N * T
 md"# MLP"
 
 # ╔═╡ 68a53b3c-3f94-4620-9fbb-1e64912ad6b9
-function mlp(layers, types)
+function mlp(types)
 	energy = 0
-	for i in 1:length(layers)-1
+	for i in 1:length(types)
 		layertype = types[i]
 		if layertype == "al"
 			T = 1
@@ -37,25 +37,35 @@ function mlp(layers, types)
 			T = Tₛₗ
 			fᵢₙ = 0.8
 		end
-		energy += Eₒ * S(layers[i], layers[i+1], fᵢₙ, T) + Eᵤ * U(layers[i], T)
+
+		if i == 1
+			N = 784
+			C = 500
+		elseif i == 2
+			N = 500
+			C = 500
+		elseif i == 3
+			N = 500
+			C = 10
+		end
+		
+		energy += Eₒ * S(N, C, fᵢₙ, T) + Eᵤ * U(N, T)
 	end
+	
 	return energy
 end
 
-# ╔═╡ 95dbffba-3769-4eed-bc37-e85d3465fb65
-layers = [784, 500, 10, 0]
-
 # ╔═╡ 97307ef1-8d3a-46ca-950d-063c69059c7b
-mlp(layers, ["sl" "sl" "sl" ""])
+mlp(["sl" "sl" "sl"])
 
 # ╔═╡ a1d71da1-d50a-45df-8b40-9c75a6312a0a
-mlp(layers, ["al" "sl" "sl" ""])
+mlp(["al" "sl" "sl"])
 
 # ╔═╡ 15b4c24a-ac27-4eee-9737-767a9462aac7
-mlp(layers, ["al" "al" "sl" ""])
+mlp(["al" "al" "sl"])
 
 # ╔═╡ 24b25b8f-db09-4542-9634-2c5c79435dd6
-mlp(layers, ["al" "al" "al" ""])
+mlp(["al" "al" "al"])
 
 # ╔═╡ 5377d168-3719-44c4-83d2-b40c3266072f
 md"# CNN"
@@ -123,7 +133,6 @@ cnn(["al" "al" "al" "al" "al" "al"])
 # ╠═2efe4501-200e-45c8-a940-5f3cd3b05358
 # ╟─fc829346-e4d3-11ec-38d5-238e5e291aab
 # ╠═68a53b3c-3f94-4620-9fbb-1e64912ad6b9
-# ╠═95dbffba-3769-4eed-bc37-e85d3465fb65
 # ╠═97307ef1-8d3a-46ca-950d-063c69059c7b
 # ╠═a1d71da1-d50a-45df-8b40-9c75a6312a0a
 # ╠═15b4c24a-ac27-4eee-9737-767a9462aac7
