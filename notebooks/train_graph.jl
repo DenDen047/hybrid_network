@@ -27,7 +27,19 @@ acccurve = plot(
 )
 
 # ╔═╡ 8ecd411c-146d-4517-8506-58e44fe81454
-savefig(acccurve, "output.pdf")
+savefig(acccurve, "output_acc.pdf")
+
+# ╔═╡ 6c1777ca-8bb9-40aa-aa49-5d0dc82f7d45
+losscurve = plot(
+	df.epoch,
+	[df.train_loss, df.val_loss],
+	label = ["Train" "Test"],
+	xlabel = "Epoch", ylabel = "Loss",
+	legend = :bottomright
+)
+
+# ╔═╡ 4d1976a3-8511-4a37-bafb-3a712126c300
+savefig(losscurve, "output_loss.pdf")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1015,5 +1027,7 @@ version = "0.9.1+5"
 # ╠═133607c6-3258-4e7e-9417-4c5b3494c2b3
 # ╠═1c030ef2-d99f-4538-b3d2-3128cd69fba7
 # ╠═8ecd411c-146d-4517-8506-58e44fe81454
+# ╠═6c1777ca-8bb9-40aa-aa49-5d0dc82f7d45
+# ╠═4d1976a3-8511-4a37-bafb-3a712126c300
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
