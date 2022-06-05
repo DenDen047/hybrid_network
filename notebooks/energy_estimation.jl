@@ -11,10 +11,10 @@ Eₒ = 0.02711e-9
 Eᵤ = 0.081e-9
 
 # ╔═╡ feaab574-cde2-4144-9dac-94afa68252a3
-Tₛₗ = 2
+Tₛₗ = 25
 
 # ╔═╡ 98b836ea-2d84-4384-be2c-eb782078863d
-Δt = 0.0626
+Δt = 0.0381
 
 # ╔═╡ cfa9d43e-2f3d-4ace-9327-4972fd93e794
 S(N, C, fᵢₙ, T) = N * C * fᵢₙ * T * Δt
@@ -35,7 +35,7 @@ function mlp(types)
 			fᵢₙ = 1 / Δt
 		elseif layertype == "sl"
 			T = Tₛₗ
-			fᵢₙ = 0.8
+			fᵢₙ = 0.5
 		end
 
 		if i == 1
@@ -80,7 +80,7 @@ function cnn(types)
 			fᵢₙ = 1 / Δt
 		elseif layertype == "sl"
 			T = Tₛₗ
-			fᵢₙ = 0.8
+			fᵢₙ = 0.5
 		end
 
 		if i == 1
