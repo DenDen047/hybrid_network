@@ -27,6 +27,7 @@ md"# MLP"
 
 # ╔═╡ 68a53b3c-3f94-4620-9fbb-1e64912ad6b9
 function mlp(types)
+	T = 0
 	energy = 0
 	for i in 1:length(types)
 		layertype = types[i]
@@ -35,11 +36,12 @@ function mlp(types)
 			fᵢₙ = 1 / Δt
 		elseif layertype == "sl"
 			T = Tₛₗ
-			if i > 1 && types[i-1] == "al"
-				fᵢₙ = 1 / Δt
-			else
-				fᵢₙ = 0.5
-			end
+			# if i > 1 && types[i-1] == "al"
+			# 	fᵢₙ = 1 / Δt
+			# else
+			# 	fᵢₙ = 0.5
+			# end
+			fᵢₙ = 0.5
 		end
 
 		if i == 1
@@ -55,6 +57,7 @@ function mlp(types)
 		
 		energy += Eₒ * S(N, C, fᵢₙ, T) + Eᵤ * U(N, T)
 	end
+	energy += Eᵤ * U(10, T)
 	
 	return energy
 end
@@ -76,20 +79,21 @@ md"# CNN"
 
 # ╔═╡ 0b81789a-c11d-4d2d-9370-772eca598f60
 function cnn(types)
+	T = 0
 	energy = 0
-	for i in 1:length(types)-1
+	for i in 1:length(types)
 		layertype = types[i]
 		if layertype == "al"
 			T = 1
 			fᵢₙ = 1 / Δt
 		elseif layertype == "sl"
 			T = Tₛₗ
-			if i > 1 && types[i-1] == "al"
-				fᵢₙ = 1 / Δt
-			else
-				fᵢₙ = 0.5
-			end
-			# fᵢₙ = 0.5
+			# if i > 1 && types[i-1] == "al"
+			# 	fᵢₙ = 1 / Δt
+			# else
+			# 	fᵢₙ = 0.5
+			# end
+			fᵢₙ = 0.5
 		end
 
 		if i == 1
@@ -105,7 +109,7 @@ function cnn(types)
 			N = 13 * 13 * 64
 			C = 3*3 * 64
 		elseif i == 5
-			N = 11 * 11 * 64
+			N = 5 * 5 * 64
 			C = 512
 		elseif i == 6
 			N = 512
@@ -116,6 +120,7 @@ function cnn(types)
 		
 		energy += Eₒ * S(N, C, fᵢₙ, T) + Eᵤ * U(N, T)
 	end
+	energy += Eᵤ * U(10, T)
 	
 	return energy
 end
