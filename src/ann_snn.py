@@ -164,6 +164,7 @@ if __name__ == "__main__":
             train_acc_list.append(train_acc)
 
             logger.info('Train epoch: {}, acc: {}'.format(j, train_acc))
+            logger.info('Train epoch: {}, loss: {}'.format(j, train_loss))
 
             # save every checkpoint
             if save_checkpoint == True:
@@ -183,6 +184,7 @@ if __name__ == "__main__":
             val_acc, val_loss = utils.evaluate(model, val_dataloader, device, writer=None)
 
             logger.info('Val epoch: {}, acc: {}'.format(j, val_acc))
+            logger.info('Val epoch: {}, loss: {}'.format(j, val_loss))
             val_acc_list.append(val_acc)
 
             # recode the metrics
