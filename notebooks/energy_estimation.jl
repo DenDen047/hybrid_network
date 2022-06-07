@@ -36,12 +36,12 @@ function mlp(types)
 			fᵢₙ = 1 / Δt
 		elseif layertype == "sl"
 			T = Tₛₗ
-			# if i > 1 && types[i-1] == "al"
-			# 	fᵢₙ = 1 / Δt
-			# else
-			# 	fᵢₙ = 0.5
-			# end
-			fᵢₙ = 0.5
+			if i > 1 && types[i-1] == "al"
+				fᵢₙ = 1 / Δt
+			else
+				fᵢₙ = 0.5
+			end
+			# fᵢₙ = 0.5
 		end
 
 		if i == 1
@@ -88,12 +88,12 @@ function cnn(types)
 			fᵢₙ = 1 / Δt
 		elseif layertype == "sl"
 			T = Tₛₗ
-			# if i > 1 && types[i-1] == "al"
-			# 	fᵢₙ = 1 / Δt
-			# else
-			# 	fᵢₙ = 0.5
-			# end
-			fᵢₙ = 0.5
+			if i > 1 && types[i-1] == "al"
+				fᵢₙ = 1 / Δt
+			else
+				fᵢₙ = 0.5
+			end
+			# fᵢₙ = 0.5
 		end
 
 		if i == 1
